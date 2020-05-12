@@ -1,28 +1,145 @@
 mod atoms;
 use atoms::Atoms;
 
+extern crate sfml;
+
+static TILE_SIZE: f32 = 50.0;
+static BOARD_SIZE: usize = 10;
+
+use sfml::system::{Clock,Vector2f};
+use sfml::window::{ContextSettings, VideoMode, Key, Style, Event, mouse::Button};
+use sfml::graphics::{Sprite,Font,Texture,RenderStates, RenderWindow, RenderTarget, CircleShape, Color, Transformable, Shape};
+
+trait Element {
+    fn set_position(&mut self, position: &Vector2f);
+    fn draw<RT: RenderTarget>(&self, target: &mut RT, rs: &mut RenderStates);
+    fn restart();
+    fn is_animated() -> bool;
+}
+
+
 fn main() {
-    let mut atoms = Atoms::new( 10, 10);
+    let mut atoms = Atoms::new( BOARD_SIZE, BOARD_SIZE);
 
-    // Remove random atoms
-    atoms.clear( false );
+    let font = match Font::from_file("Instruction.ttf") {
+        Some(font) => font,
+        None => panic!("Cannot load font.")
+    };
 
-    let clicks = [ [ 9, 4 ], [ 8, 3 ], [ 9, 1 ], [ 7, 6 ], [ 5, 0 ], [ 9, 3 ], [ 6, 5 ], [ 1, 2 ], [ 3, 0 ], [ 5, 1 ], [ 8, 1 ], [ 6, 8 ], [ 9, 0 ], [ 9, 0 ], [ 1, 0 ], [ 6, 7 ], [ 5, 7 ], [ 6, 3 ], [ 5, 2 ], [ 5, 7 ], [ 8, 7 ], [ 6, 8 ], [ 2, 5 ], [ 0, 2 ], [ 5, 1 ], [ 2, 2 ], [ 5, 8 ], [ 0, 0 ], [ 2, 8 ], [ 2, 5 ], [ 4, 1 ], [ 1, 5 ], [ 1, 8 ], [ 9, 1 ], [ 0, 4 ], [ 8, 8 ], [ 4, 3 ], [ 7, 6 ], [ 4, 1 ], [ 3, 7 ], [ 2, 2 ], [ 1, 0 ], [ 5, 7 ], [ 1, 9 ], [ 2, 3 ], [ 2, 2 ], [ 6, 4 ], [ 0, 6 ], [ 4, 8 ], [ 6, 3 ], [ 9, 9 ], [ 2, 5 ], [ 8, 3 ], [ 2, 2 ], [ 0, 3 ], [ 1, 7 ], [ 3, 3 ], [ 3, 5 ], [ 5, 3 ], [ 7, 2 ], [ 5, 6 ], [ 0, 2 ], [ 3, 6 ], [ 7, 1 ], [ 4, 0 ], [ 8, 6 ], [ 7, 7 ], [ 5, 0 ], [ 0, 0 ], [ 3, 1 ], [ 6, 4 ], [ 2, 4 ], [ 7, 7 ], [ 7, 1 ], [ 3, 7 ], [ 1, 8 ], [ 6, 3 ], [ 9, 4 ], [ 0, 7 ], [ 8, 3 ], [ 5, 2 ], [ 4, 9 ], [ 9, 0 ], [ 7, 6 ], [ 8, 7 ], [ 4, 9 ], [ 4, 1 ], [ 7, 6 ], [ 3, 6 ], [ 9, 4 ], [ 4, 2 ], [ 0, 7 ], [ 0, 5 ], [ 5, 8 ], [ 7, 9 ], [ 5, 9 ], [ 9, 8 ], [ 5, 6 ], [ 5, 8 ], [ 6, 6 ], [ 5, 6 ], [ 4, 8 ], [ 2, 3 ], [ 7, 2 ], [ 2, 2 ], [ 1, 0 ], [ 5, 6 ], [ 6, 2 ], [ 3, 3 ], [ 0, 7 ], [ 7, 1 ], [ 3, 7 ], [ 6, 7 ], [ 7, 0 ], [ 5, 7 ], [ 6, 7 ], [ 7, 7 ], [ 3, 8 ], [ 7, 0 ], [ 7, 7 ], [ 5, 2 ], [ 7, 4 ], [ 1, 7 ], [ 5, 7 ], [ 2, 8 ], [ 9, 9 ], [ 3, 9 ], [ 9, 3 ], [ 8, 7 ], [ 4, 1 ], [ 4, 6 ], [ 2, 8 ], [ 1, 3 ], [ 5, 8 ], [ 8, 5 ], [ 5, 5 ], [ 1, 4 ], [ 8, 7 ], [ 1, 9 ], [ 7, 1 ], [ 3, 8 ], [ 5, 3 ], [ 2, 8 ], [ 4, 7 ], [ 5, 6 ], [ 9, 5 ], [ 4, 3 ], [ 6, 0 ], [ 1, 4 ], [ 2, 9 ], [ 5, 1 ], [ 9, 1 ], [ 6, 7 ], [ 0, 7 ], [ 3, 6 ], [ 6, 8 ], [ 9, 8 ], [ 8, 8 ], [ 7, 7 ], [ 1, 8 ], [ 0, 0 ], [ 4, 8 ], [ 6, 9 ], [ 7, 4 ], [ 9, 4 ], [ 4, 5 ], [ 1, 5 ], [ 3, 1 ], [ 4, 1 ], [ 9, 3 ], [ 3, 9 ], [ 9, 6 ], [ 9, 5 ], [ 8, 3 ], [ 2, 5 ], [ 2, 0 ], [ 9, 7 ], [ 4, 8 ], [ 1, 3 ], [ 2, 3 ], [ 3, 7 ], [ 4, 6 ], [ 7, 3 ], [ 0, 5 ], [ 1, 6 ], [ 6, 1 ], [ 6, 3 ], [ 0, 9 ], [ 2, 7 ], [ 7, 7 ], [ 4, 9 ], [ 7, 5 ], [ 7, 1 ], [ 6, 8 ], [ 7, 3 ], [ 4, 1 ], [ 4, 9 ], [ 7, 8 ], [ 3, 8 ], [ 1, 0 ], [ 1, 7 ], [ 9, 4 ], [ 9, 5 ], [ 2, 4 ], [ 7, 3 ], [ 3, 4 ], [ 6, 0 ], [ 2, 9 ], [ 2, 3 ], [ 5, 1 ], [ 6, 4 ], [ 2, 7 ], [ 8, 3 ], [ 8, 5 ], [ 4, 3 ], [ 5, 1 ], [ 5, 2 ], [ 4, 2 ], [ 6, 3 ], [ 3, 7 ], [ 3, 3 ], [ 2, 6 ], [ 0, 3 ], [ 4, 3 ], [ 3, 0 ], [ 8, 1 ], [ 1, 7 ], [ 3, 9 ], [ 3, 0 ], [ 6, 7 ], [ 3, 7 ], [ 0, 6 ], [ 5, 4 ], [ 4, 0 ], [ 5, 2 ], [ 5, 7 ], [ 1, 5 ], [ 8, 2 ], [ 3, 7 ], [ 6, 1 ], [ 1, 0 ], [ 1, 2 ], [ 1, 3 ], [ 8, 6 ], [ 6, 7 ], [ 2, 4 ], [ 3, 6 ], [ 4, 1 ], [ 8, 1 ], [ 1, 3 ], [ 2, 5 ], [ 1, 6 ], [ 8, 3 ], [ 5, 6 ], [ 5, 0 ], [ 9, 9 ], [ 1, 7 ], [ 6, 6 ], [ 9, 3 ], [ 3, 0 ], [ 8, 2 ], [ 6, 8 ], [ 3, 2 ], [ 0, 1 ], [ 8, 7 ], [ 4, 7 ], [ 8, 2 ], [ 6, 3 ], [ 0, 6 ], [ 8, 2 ], [ 8, 2 ], [ 3, 0 ], [ 2, 7 ], [ 8, 5 ], [ 5, 1 ], [ 9, 2 ], [ 7, 1 ], [ 2, 4 ], [ 9, 0 ], [ 9, 3 ], [ 6, 3 ], [ 1, 1 ], [ 4, 6 ], [ 2, 4 ], [ 3, 5 ], [ 6, 9 ], [ 5, 9 ], [ 5, 5 ], [ 7, 2 ], [ 6, 1 ], [ 4, 8 ], [ 5, 7 ], [ 5, 3 ], [ 7, 5 ], [ 5, 9 ], [ 3, 5 ], [ 3, 0 ], [ 5, 3 ], [ 9, 8 ], [ 7, 5 ], [ 0, 2 ], [ 7, 5 ], [ 7, 3 ], [ 6, 2 ], [ 4, 8 ], [ 4, 3 ], [ 3, 9 ], [ 5, 3 ], [ 3, 7 ], [ 7, 6 ], [ 1, 4 ], [ 8, 5 ], [ 6, 1 ], [ 6, 1 ], [ 9, 2 ], [ 2, 6 ], [ 2, 1 ], [ 1, 5 ], [ 2, 1 ], [ 1, 2 ], [ 6, 4 ], [ 3, 0 ], [ 5, 5 ], [ 9, 8 ], [ 2, 6 ], [ 4, 2 ], [ 7, 1 ], [ 9, 3 ], [ 4, 6 ], [ 7, 0 ], [ 3, 5 ], [ 1, 5 ], [ 4, 8 ], [ 6, 7 ], [ 4, 2 ], [ 7, 1 ], [ 5, 1 ], [ 5, 6 ], [ 2, 0 ], [ 7, 1 ], [ 9, 5 ], [ 8, 9 ], [ 5, 3 ], [ 0, 0 ], [ 3, 3 ], [ 1, 8 ], [ 8, 6 ], [ 5, 8 ], [ 5, 7 ]];
+    let stoneTexture = match Texture::from_file("stone.png") {
+        Some(stoneTexture) => stoneTexture,
+        None => panic!("Texture error.")
+    };
 
-    atoms.dump_state();
+    let stoneSize = stoneTexture.size();
 
-    for click in clicks.iter() {
-        println!("[ {}, {} ]", click[0], click[1]);
-        atoms.click(click[0],click[1]);
-        atoms.dump_state();
-        while !atoms.finished && !atoms.game_over() {
-            atoms.recalculate_board();
-            atoms.dump_state();
+    let mut stoneSprite = Sprite::with_texture( &stoneTexture );
+
+    stoneSprite.set_scale( Vector2f::new (TILE_SIZE / stoneSize.x as f32, TILE_SIZE / stoneSize.y as f32 ) );
+
+    let woodTexture = match Texture::from_file("wood.png") {
+        Some(woodTexture) => woodTexture,
+        None => panic!("Texture error.")
+    };
+
+    let woodSize = woodTexture.size();
+
+    let mut woodSprite = Sprite::with_texture( &woodTexture );
+
+    woodSprite.set_scale(  Vector2f::new (TILE_SIZE / woodSize.x as f32, TILE_SIZE / woodSize.y as f32 ));
+
+    let pColor = [ Color::RED, Color::GREEN, Color::BLUE, Color::YELLOW ];
+    let sColor = Color::WHITE;
+
+    // Create the window of the application
+    let mut window = RenderWindow::new(VideoMode::new( (10+BOARD_SIZE as u32) * TILE_SIZE as u32,
+                                                        BOARD_SIZE as u32 * TILE_SIZE as u32,
+                                                        32),
+                                       "Atoms",
+                                       Style::CLOSE,
+                                       &ContextSettings::default());
+
+    window.set_framerate_limit( 60 );
+
+    let mut clock = Clock::start();
+
+    // Create a CircleShape
+    let mut circle = CircleShape::new(30., 20);
+    circle.set_fill_color(&Color::RED);
+    circle.set_position(Vector2f::new(100., 100.));
+
+    while window.is_open() {
+        if !atoms.finished {
+            let elapsed = clock.elapsed_time();
+            if elapsed.as_seconds() > 0.25 {
+                atoms.recalculate_board();
+                clock.restart();
+                //drawables[ Atoms::Bang ]->restart();
+            }
         }
+
+        // Handle events
+        let event = match window.poll_event() {
+            Some(event) => {
+
+                match event {
+                    Event::Closed => window.close(),
+                    Event::KeyPressed { code, .. } => { match code {
+                        Key::Escape => { window.close() },
+                        _ => { } } },
+                    _ => { }
+                }
+
+                if atoms.finished {
+                    match event {
+                        Event::MouseButtonPressed { button, x, y } => {
+                            match button {
+                                Button::Left => { atoms.click( (x / TILE_SIZE as i32) as usize,
+                                                                (y / TILE_SIZE as i32) as usize );
+                                                  clock.restart();
+                                                  //drawables[ Atoms::Bang ]->restart()
+                                },
+                                _ => {} }
+                        },
+                        Event::KeyPressed { code, .. } => { match code {
+                            Key::R => { atoms.clear( true ) },
+                            Key::C => { atoms.clear( false ) },
+                            Key::Space => {  if !atoms.editing {
+                                atoms.clear( true );
+                            }
+                                             atoms.editing = !atoms.editing;  },
+                            _ => { } } },
+                        _ => {}
+                    }
+                }
+            },
+            None => {}
+        };
+
+
+        // Clear the window
+        window.clear(&Color::rgb(0, 200, 200));
+
+        for x in 0..BOARD_SIZE {
+            for y in 0..BOARD_SIZE {
+                let content = atoms.get_content( x, y );
+                // auto &cell = *drawables[ content ];
+                // cell.setPosition( y*TILE_SIZE, x*TILE_SIZE );
+                // window.draw( cell );
+            }
+        }
+
+        for x in 0..BOARD_SIZE {
+            for y in BOARD_SIZE..BOARD_SIZE+10 {
+                //auto &cell = *drawables[ Atoms::Wall ];
+                //cell.setPosition( y*TILE_SIZE, x*TILE_SIZE );
+                //window.draw( cell );
+            }
+        }
+
+        // Draw the shape
+        window.draw(&circle);
+        // Display things on screen
+        window.display()
     }
-
-    atoms.dump_state();
-
-    println!("{}", atoms.get_current_player() );
-
 }

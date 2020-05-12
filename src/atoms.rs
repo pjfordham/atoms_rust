@@ -19,7 +19,7 @@ fn rnd_range(modu : u32) -> u32{
 }
 
 pub struct Atoms {
-    editing : bool,
+    pub editing : bool,
     pub finished : bool,
     scores : [ u32; 4 ],
     current_player : usize,
