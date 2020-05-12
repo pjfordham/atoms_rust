@@ -1,21 +1,35 @@
-extern crate rand;
-
-use rand::Rng;
-
 use std::cmp;
+
+
+unsafe fn msws() -> u32 {
+    static mut X: u64 = 0;
+    static mut W: u64 = 0;
+    static mut S: u64 = 0xb5ad4eceda1ce2a9;
+    X = X.wrapping_mul(X);
+    W = W.wrapping_add(S);
+    X = W.wrapping_add(W);
+    X = (X>>32) | (X<<32);
+    X as u32
+}
+
+fn rnd_range(modu : u32) -> u32{
+    unsafe{
+        msws() % (modu + 1)
+    }
+}
 
 pub struct Atoms {
     editing : bool,
     pub finished : bool,
-    scores : [ i32; 4 ],
+    scores : [ u32; 4 ],
     current_player : usize,
     width : usize,
     height : usize,
     first_go: [bool;4],
     player : [[usize;10];10],
-    map : [[i32;10];10],
-    world : [[i32;10];10],
-    other_world : [[i32;10];10]
+    map : [[u32;10];10],
+    world : [[u32;10];10],
+    other_world : [[u32;10];10]
 }
 
 #[derive(PartialEq)]
@@ -89,7 +103,6 @@ impl Atoms {
             }
             self.calculate_map();
         } else {
-            let mut rng = rand::thread_rng();
             self.current_player = 0;
             self.scores = [0;4];
             self.first_go = [true;4];
@@ -98,7 +111,7 @@ impl Atoms {
                     if self.map[i][j] < 2 {
                         self.world[i][j] = 0;
                     } else {
-                        self.world[i][j] = if randomize {rng.gen_range(0,self.map[i][j]-1)} else {0}
+                        self.world[i][j] = if randomize {rnd_range(self.map[i][j]-1)} else {0}
                     }
                     self.other_world[i][j] = 0;
                     self.player[i][j] = 20;
@@ -225,7 +238,7 @@ impl Atoms {
         self.scores[ i ] == 0 && !self.first_go[ i ]
     }
 
-    pub fn get_player_score(&self,  i : usize ) -> i32 {
+    pub fn get_player_score(&self,  i : usize ) -> u32 {
         self.scores[i]
     }
 
