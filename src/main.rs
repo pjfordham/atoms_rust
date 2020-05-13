@@ -1,5 +1,6 @@
 mod atoms;
 use atoms::Atoms;
+use std::convert::TryInto;
 
 extern crate sfml;
 
@@ -53,7 +54,7 @@ impl Drawable for Number<'_> {
         let mut sprite = self.background.clone();
         sprite.set_position( self.position );
         target.draw(&sprite);
-        
+
         let mut text = Text::new( &self.number.to_string(), &self.font, TILE_SIZE as u32 );
 
         // center text
@@ -145,6 +146,77 @@ impl Drawable for RectangleShapeElement {
     }
 }
 
+struct VolatileNumber<'a> {
+    font : &'a Font,
+    color : Color,
+    background : &'a Sprite<'a>,
+    number : u32,
+    position: Vector2f,
+    master_clock : Clock
+}
+
+impl<'a> VolatileNumber<'a> {
+    fn new( _font : &'a Font, _color : Color, _background : &'a Sprite<'a>, _number : u32) -> VolatileNumber<'a> {
+        let number = VolatileNumber{ font : _font, color : _color, background : _background, number : _number, position : Vector2f::new(0.,0.), master_clock : Clock::start()  };
+         number
+    }
+    fn draw<'se, 'tex, 'sh, 'shte>(
+        &'se self,
+        target: &mut dyn RenderTarget,
+        _states: RenderStates<'tex, 'sh, 'shte>,
+        frame : usize
+    )
+    where
+        'se: 'sh, {
+        let mut sprite = self.background.clone();
+        sprite.set_position( self.position );
+        target.draw(&sprite);
+
+        let mut text = Text::new( &self.number.to_string(), &self.font, TILE_SIZE as u32 );
+
+        // center text
+        let text_rect = text.local_bounds();
+        text.set_position( self.position );
+        text.set_origin( Vector2f::new (text_rect.left + text_rect.width/2.0,
+                                        text_rect.top  + text_rect.height/2.0));
+        text.move_( Vector2f::new (0.5*TILE_SIZE, 0.5*TILE_SIZE));
+
+        if  frame >= 25 {
+            let dimness = Color::rgba(255,255,255, ((50-frame) as u8) *9 );
+            text.set_fill_color( &(self.color * dimness) );
+        } else {
+            let dimness = Color::rgba(255,255,255, (frame as u8) *9 );
+            text.set_fill_color( &(self.color * dimness) );
+        }
+        target.draw(&text);
+    }
+
+}
+
+impl _Element for VolatileNumber<'_> {
+    fn set_position(&mut self, position: &Vector2f) {
+        self.position.x = position.x;
+        self.position.y = position.y;
+    }
+    fn restart(&mut self) {}
+    fn is_animated(&mut self) -> bool {false}
+}
+
+impl Drawable for VolatileNumber<'_> {
+
+    fn draw<'se, 'tex, 'sh, 'shte>(
+        &'se self,
+        target: &mut dyn RenderTarget,
+        _states: RenderStates<'tex, 'sh, 'shte>
+    )
+    where
+        'se: 'sh, {
+        let mut frame = self.master_clock.elapsed_time().as_milliseconds() / (1000 / 50);
+        frame = frame % 50;
+        self.draw( target, _states, frame.try_into().unwrap()  );
+    }
+}
+
 trait Element: _Element + Drawable {
       fn as_drawable_ref(&mut self) -> & dyn Drawable;
 }
@@ -210,30 +282,30 @@ fn main() {
     let mut x05 = Number::new( &font, p_color[0], &wood_sprite, 1 );
     let mut x06 = Number::new( &font, p_color[0], &wood_sprite, 2 );
     let mut x07 = Number::new( &font, p_color[0], &wood_sprite, 3 );
-    let mut x08 = Number::new( &font, p_color[0], &wood_sprite, 1 ); //volatile
-    let mut x09 = Number::new( &font, p_color[0], &wood_sprite, 2 );
-    let mut x10 = Number::new( &font, p_color[0], &wood_sprite, 3 );
+    let mut x08 = VolatileNumber::new( &font, p_color[0], &wood_sprite, 1 );
+    let mut x09 = VolatileNumber::new( &font, p_color[0], &wood_sprite, 2 );
+    let mut x10 = VolatileNumber::new( &font, p_color[0], &wood_sprite, 3 );
 
     let mut x11 = Number::new( &font, p_color[1], &wood_sprite, 1 );
     let mut x12 = Number::new( &font, p_color[1], &wood_sprite, 2 );
     let mut x13 = Number::new( &font, p_color[1], &wood_sprite, 3 );
-    let mut x14 = Number::new( &font, p_color[1], &wood_sprite, 1 ); //volatile
-    let mut x15 = Number::new( &font, p_color[1], &wood_sprite, 2 );
-    let mut x16 = Number::new( &font, p_color[1], &wood_sprite, 3 );
+    let mut x14 = VolatileNumber::new( &font, p_color[1], &wood_sprite, 1 );
+    let mut x15 = VolatileNumber::new( &font, p_color[1], &wood_sprite, 2 );
+    let mut x16 = VolatileNumber::new( &font, p_color[1], &wood_sprite, 3 );
 
     let mut x17 = Number::new( &font, p_color[2], &wood_sprite, 1 );
     let mut x18 = Number::new( &font, p_color[2], &wood_sprite, 2 );
     let mut x19 = Number::new( &font, p_color[2], &wood_sprite, 3 );
-    let mut x20 = Number::new( &font, p_color[2], &wood_sprite, 1 ); //volatile
-    let mut x21 = Number::new( &font, p_color[2], &wood_sprite, 2 );
-    let mut x22 = Number::new( &font, p_color[2], &wood_sprite, 3 );
+    let mut x20 = VolatileNumber::new( &font, p_color[2], &wood_sprite, 1 );
+    let mut x21 = VolatileNumber::new( &font, p_color[2], &wood_sprite, 2 );
+    let mut x22 = VolatileNumber::new( &font, p_color[2], &wood_sprite, 3 );
 
     let mut x23 = Number::new( &font, p_color[3], &wood_sprite, 1 );
     let mut x24 = Number::new( &font, p_color[3], &wood_sprite, 2 );
     let mut x25 = Number::new( &font, p_color[3], &wood_sprite, 3 );
-    let mut x26 = Number::new( &font, p_color[3], &wood_sprite, 1 ); //volatile
-    let mut x27 = Number::new( &font, p_color[3], &wood_sprite, 2 );
-    let mut x28 = Number::new( &font, p_color[3], &wood_sprite, 3 );
+    let mut x26 = VolatileNumber::new( &font, p_color[3], &wood_sprite, 1 );
+    let mut x27 = VolatileNumber::new( &font, p_color[3], &wood_sprite, 2 );
+    let mut x28 = VolatileNumber::new( &font, p_color[3], &wood_sprite, 3 );
 
     let mut x29 = Number::new( &font, s_color, &wood_sprite, 1 );
     let mut x30 = Number::new( &font, s_color, &wood_sprite, 2 );
@@ -321,7 +393,7 @@ fn main() {
         };
 
         window.clear( &Color::BLACK );
-        
+
         for x in 0..BOARD_SIZE {
             for y in 0..BOARD_SIZE {
                 let pos = Vector2f::new(x as f32*TILE_SIZE as f32, y as f32 *TILE_SIZE as f32 );
@@ -352,19 +424,18 @@ fn main() {
         window.draw(&text);
 
         for i in 0..4 {
-            let mut s = String::new();
-            if(atoms.is_player_dead( i )) {
-                s = format!("Player {}:    DEAD", i+1);
+            let s = if atoms.is_player_dead( i ) {
+                format!("Player {}:    DEAD", i+1)
             } else {
-                if (atoms.game_over()) {
-                    s = format!("Player {}: WINNER!", i+1);
+                if atoms.game_over() {
+                    format!("Player {}: WINNER!", i+1)
                 } else {
-                    s = format!("Player {}:     {:03}", i+1, atoms.get_player_score(i));
+                    format!("Player {}:     {:03}", i+1, atoms.get_player_score(i))
                 }
-            }
+            };
             let mut text = Text::new( &s, &font, (TILE_SIZE-5.0) as u32 );
             text.set_position( Vector2f::new(BOARD_SIZE as f32 *TILE_SIZE+5.0, TILE_SIZE*(i as f32+3.0)-5.0));
-            if (i == atoms.get_current_player() ) {
+            if i == atoms.get_current_player() {
                 text.set_outline_thickness(5.0);
                 text.set_fill_color(&p_color[i]);
                 text.set_outline_color(&Color::WHITE);
@@ -377,4 +448,5 @@ fn main() {
         // Display things on screen
         window.display()
     }
+    atoms.dump_state();
 }
