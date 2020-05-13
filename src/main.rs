@@ -339,6 +339,41 @@ fn main() {
             }
         }
 
+        let mut text = Text::new( "Score Board", &font, (TILE_SIZE-5.0) as u32 );
+        text.set_position( Vector2f::new(BOARD_SIZE as f32*(TILE_SIZE as f32 +9.5) as f32, TILE_SIZE as f32));
+        text.set_fill_color(&Color::WHITE);
+
+        // center text
+        let text_rect = text.local_bounds();
+        text.set_origin( Vector2f::new(text_rect.left + text_rect.width/2.0,
+                       text_rect.top  + text_rect.height/2.0));
+        text.move_( Vector2f::new(0.5*TILE_SIZE, 0.5*TILE_SIZE));
+
+        window.draw(&text);
+
+        for i in 0..4 {
+            let mut s = String::new();
+            if(atoms.is_player_dead( i )) {
+                s = format!("Player {}:    DEAD", i+1);
+            } else {
+                if (atoms.game_over()) {
+                    s = format!("Player {}: WINNER!", i+1);
+                } else {
+                    s = format!("Player {}:     {:03}", i+1, atoms.get_player_score(i));
+                }
+            }
+            let mut text = Text::new( &s, &font, (TILE_SIZE-5.0) as u32 );
+            text.set_position( Vector2f::new(BOARD_SIZE as f32 *TILE_SIZE+5.0, TILE_SIZE*(i as f32+3.0)-5.0));
+            if (i == atoms.get_current_player() ) {
+                text.set_outline_thickness(5.0);
+                text.set_fill_color(&p_color[i]);
+                text.set_outline_color(&Color::WHITE);
+            } else {
+                text.set_fill_color(&p_color[i]);
+            }
+            window.draw(&text);
+        }
+
         // Display things on screen
         window.display()
     }
