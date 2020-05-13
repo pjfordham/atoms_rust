@@ -33,9 +33,10 @@ pub struct Atoms {
 }
 
 #[derive(PartialEq)]
+#[derive(Copy, Clone)]
 pub enum Drawable {
     // Map Elements
-    Wall = 1, Corner, Edge, Empty, Bang,
+    Wall = 0, Corner, Edge, Empty, Bang,
 
     // Player One
     P1One, P1Two, P1Three,

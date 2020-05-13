@@ -8,14 +8,152 @@ static BOARD_SIZE: usize = 10;
 
 use sfml::system::{Clock,Vector2f};
 use sfml::window::{ContextSettings, VideoMode, Key, Style, Event, mouse::Button};
-use sfml::graphics::{Sprite,Font,Texture,RenderStates, RenderWindow, RenderTarget, CircleShape, Color, Transformable, Shape};
+use sfml::graphics::{Shape,RectangleShape,Drawable, Sprite,Font,Text,Texture,RenderStates, RenderWindow, RenderTarget, Color, Transformable};
 
-trait Element {
+trait _Element {
     fn set_position(&mut self, position: &Vector2f);
-    fn draw<RT: RenderTarget>(&self, target: &mut RT, rs: &mut RenderStates);
-    fn restart();
-    fn is_animated() -> bool;
+    fn restart(&mut self);
+    fn is_animated(&mut self) -> bool;
 }
+
+struct Number<'a> {
+    font : &'a Font,
+    color : Color,
+    background : &'a Sprite<'a>,
+    number : u32,
+    position: Vector2f
+}
+
+impl<'a> Number<'a> {
+    fn new( _font : &'a Font, _color : Color, _background : &'a Sprite<'a>, _number : u32) -> Number<'a> {
+        let number = Number{ font : _font, color : _color, background : _background, number : _number, position : Vector2f::new(0.,0.)  };
+         number
+    }
+}
+
+impl _Element for Number<'_> {
+    fn set_position(&mut self, position: &Vector2f) {
+        self.position.x = position.x;
+        self.position.y = position.y;
+    }
+    fn restart(&mut self) {}
+    fn is_animated(&mut self) -> bool {false}
+}
+
+impl Drawable for Number<'_> {
+
+    fn draw<'se, 'tex, 'sh, 'shte>(
+        &'se self,
+        target: &mut dyn RenderTarget,
+        _states: RenderStates<'tex, 'sh, 'shte>
+    )
+    where
+        'se: 'sh, {
+
+        let mut sprite = self.background.clone();
+        sprite.set_position( self.position );
+        target.draw(&sprite);
+        
+        let mut text = Text::new( &self.number.to_string(), &self.font, TILE_SIZE as u32 );
+
+        // center text
+        let text_rect = text.local_bounds();
+        text.set_position( self.position );
+        text.set_origin( Vector2f::new (text_rect.left + text_rect.width/2.0,
+                                        text_rect.top  + text_rect.height/2.0));
+        text.move_( Vector2f::new (0.5*TILE_SIZE, 0.5*TILE_SIZE));
+
+        text.set_fill_color( &self.color );
+
+        target.draw(&text);
+    }
+}
+
+struct SpriteElement<'a> {
+    background : &'a Sprite<'a>,
+    position: Vector2f
+}
+
+impl<'a> SpriteElement<'a> {
+    fn new(_background : &'a Sprite<'a>) -> SpriteElement<'a> {
+        let number = SpriteElement{ background : _background, position : Vector2f::new(0.,0.)  };
+         number
+    }
+}
+
+impl _Element for SpriteElement<'_> {
+    fn set_position(&mut self, position: &Vector2f) {
+        self.position.x = position.x;
+        self.position.y = position.y;
+    }
+    fn restart(&mut self) {}
+    fn is_animated(&mut self) -> bool {false}
+}
+
+impl Drawable for SpriteElement<'_> {
+
+    fn draw<'se, 'tex, 'sh, 'shte>(
+        &'se self,
+        target: &mut dyn RenderTarget,
+        _states: RenderStates<'tex, 'sh, 'shte>
+    )
+    where
+        'se: 'sh, {
+
+        let mut sprite = self.background.clone();
+        sprite.set_position( self.position );
+        target.draw(&sprite);
+    }
+}
+
+struct RectangleShapeElement {
+    color : Color,
+    position: Vector2f
+}
+
+impl<'a> RectangleShapeElement {
+    fn new( _color : Color) -> RectangleShapeElement {
+        let number = RectangleShapeElement{ color : _color, position : Vector2f::new(0.,0.)  };
+         number
+    }
+}
+
+impl _Element for RectangleShapeElement {
+    fn set_position(&mut self, position: &Vector2f) {
+        self.position.x = position.x;
+        self.position.y = position.y;
+    }
+    fn restart(&mut self) {}
+    fn is_animated(&mut self) -> bool {false}
+}
+
+impl Drawable for RectangleShapeElement {
+
+    fn draw<'se, 'tex, 'sh, 'shte>(
+        &'se self,
+        target: &mut dyn RenderTarget,
+        _states: RenderStates<'tex, 'sh, 'shte>
+    )
+    where
+        'se: 'sh, {
+
+        let mut shape = RectangleShape::new();
+        shape.set_size(Vector2f::new(TILE_SIZE, TILE_SIZE));
+        shape.set_fill_color( &self.color );
+        shape.set_position( self.position );
+        target.draw(&shape);
+    }
+}
+
+trait Element: _Element + Drawable {
+      fn as_drawable_ref(&mut self) -> & dyn Drawable;
+}
+impl<T: _Element + Drawable> Element for T {
+  fn as_drawable_ref(&mut self) -> & dyn Drawable {
+        self
+    }
+}
+
 
 
 fn main() {
@@ -26,30 +164,30 @@ fn main() {
         None => panic!("Cannot load font.")
     };
 
-    let stoneTexture = match Texture::from_file("stone.png") {
-        Some(stoneTexture) => stoneTexture,
+    let stone_texture = match Texture::from_file("stone.png") {
+        Some(stone_texture) => stone_texture,
         None => panic!("Texture error.")
     };
 
-    let stoneSize = stoneTexture.size();
+    let stone_size = stone_texture.size();
 
-    let mut stoneSprite = Sprite::with_texture( &stoneTexture );
+    let mut stone_sprite = Sprite::with_texture( &stone_texture );
 
-    stoneSprite.set_scale( Vector2f::new (TILE_SIZE / stoneSize.x as f32, TILE_SIZE / stoneSize.y as f32 ) );
+    stone_sprite.set_scale( Vector2f::new (TILE_SIZE / stone_size.x as f32, TILE_SIZE / stone_size.y as f32 ) );
 
-    let woodTexture = match Texture::from_file("wood.png") {
-        Some(woodTexture) => woodTexture,
+    let wood_texture = match Texture::from_file("wood.png") {
+        Some(wood_texture) => wood_texture,
         None => panic!("Texture error.")
     };
 
-    let woodSize = woodTexture.size();
+    let wood_size = wood_texture.size();
 
-    let mut woodSprite = Sprite::with_texture( &woodTexture );
+    let mut wood_sprite = Sprite::with_texture( &wood_texture );
 
-    woodSprite.set_scale(  Vector2f::new (TILE_SIZE / woodSize.x as f32, TILE_SIZE / woodSize.y as f32 ));
+    wood_sprite.set_scale(  Vector2f::new (TILE_SIZE / wood_size.x as f32, TILE_SIZE / wood_size.y as f32 ));
 
-    let pColor = [ Color::RED, Color::GREEN, Color::BLUE, Color::YELLOW ];
-    let sColor = Color::WHITE;
+    let p_color = [ Color::RED, Color::GREEN, Color::BLUE, Color::YELLOW ];
+    let s_color = Color::WHITE;
 
     // Create the window of the application
     let mut window = RenderWindow::new(VideoMode::new( (10+BOARD_SIZE as u32) * TILE_SIZE as u32,
@@ -63,10 +201,76 @@ fn main() {
 
     let mut clock = Clock::start();
 
-    // Create a CircleShape
-    let mut circle = CircleShape::new(30., 20);
-    circle.set_fill_color(&Color::RED);
-    circle.set_position(Vector2f::new(100., 100.));
+    let mut x00 = SpriteElement::new( &stone_sprite );
+    let mut x01 = RectangleShapeElement::new( Color::RED );
+    let mut x02 = RectangleShapeElement::new( Color::YELLOW );
+    let mut x03 = SpriteElement::new( &wood_sprite );
+    let mut x04 = SpriteElement::new( &wood_sprite ); // FIXME to explosion
+
+    let mut x05 = Number::new( &font, p_color[0], &wood_sprite, 1 );
+    let mut x06 = Number::new( &font, p_color[0], &wood_sprite, 2 );
+    let mut x07 = Number::new( &font, p_color[0], &wood_sprite, 3 );
+    let mut x08 = Number::new( &font, p_color[0], &wood_sprite, 1 ); //volatile
+    let mut x09 = Number::new( &font, p_color[0], &wood_sprite, 2 );
+    let mut x10 = Number::new( &font, p_color[0], &wood_sprite, 3 );
+
+    let mut x11 = Number::new( &font, p_color[1], &wood_sprite, 1 );
+    let mut x12 = Number::new( &font, p_color[1], &wood_sprite, 2 );
+    let mut x13 = Number::new( &font, p_color[1], &wood_sprite, 3 );
+    let mut x14 = Number::new( &font, p_color[1], &wood_sprite, 1 ); //volatile
+    let mut x15 = Number::new( &font, p_color[1], &wood_sprite, 2 );
+    let mut x16 = Number::new( &font, p_color[1], &wood_sprite, 3 );
+
+    let mut x17 = Number::new( &font, p_color[2], &wood_sprite, 1 );
+    let mut x18 = Number::new( &font, p_color[2], &wood_sprite, 2 );
+    let mut x19 = Number::new( &font, p_color[2], &wood_sprite, 3 );
+    let mut x20 = Number::new( &font, p_color[2], &wood_sprite, 1 ); //volatile
+    let mut x21 = Number::new( &font, p_color[2], &wood_sprite, 2 );
+    let mut x22 = Number::new( &font, p_color[2], &wood_sprite, 3 );
+
+    let mut x23 = Number::new( &font, p_color[3], &wood_sprite, 1 );
+    let mut x24 = Number::new( &font, p_color[3], &wood_sprite, 2 );
+    let mut x25 = Number::new( &font, p_color[3], &wood_sprite, 3 );
+    let mut x26 = Number::new( &font, p_color[3], &wood_sprite, 1 ); //volatile
+    let mut x27 = Number::new( &font, p_color[3], &wood_sprite, 2 );
+    let mut x28 = Number::new( &font, p_color[3], &wood_sprite, 3 );
+
+    let mut x29 = Number::new( &font, s_color, &wood_sprite, 1 );
+    let mut x30 = Number::new( &font, s_color, &wood_sprite, 2 );
+
+    let drawables: [& mut dyn Element; 31] = [
+        &mut x00,
+        &mut x01,
+        &mut x02,
+        &mut x03,
+        &mut x04,
+        &mut x05,
+        &mut x06,
+        &mut x07,
+        &mut x08,
+        &mut x09,
+        &mut x10,
+        &mut x11,
+        &mut x12,
+        &mut x13,
+        &mut x14,
+        &mut x15,
+        &mut x16,
+        &mut x17,
+        &mut x18,
+        &mut x19,
+        &mut x20,
+        &mut x21,
+        &mut x22,
+        &mut x23,
+        &mut x24,
+        &mut x25,
+        &mut x26,
+        &mut x27,
+        &mut x28,
+        &mut x29,
+        &mut x30
+   ];
 
     while window.is_open() {
         if !atoms.finished {
@@ -79,7 +283,7 @@ fn main() {
         }
 
         // Handle events
-        let event = match window.poll_event() {
+        match window.poll_event() {
             Some(event) => {
 
                 match event {
@@ -116,29 +320,25 @@ fn main() {
             None => {}
         };
 
-
-        // Clear the window
-        window.clear(&Color::rgb(0, 200, 200));
-
+        window.clear( &Color::BLACK );
+        
         for x in 0..BOARD_SIZE {
             for y in 0..BOARD_SIZE {
+                let pos = Vector2f::new(x as f32*TILE_SIZE as f32, y as f32 *TILE_SIZE as f32 );
                 let content = atoms.get_content( x, y );
-                // auto &cell = *drawables[ content ];
-                // cell.setPosition( y*TILE_SIZE, x*TILE_SIZE );
-                // window.draw( cell );
+                drawables[ content as usize ].set_position( &pos );
+                window.draw( drawables[ content as usize ].as_drawable_ref() );
             }
         }
 
-        for x in 0..BOARD_SIZE {
-            for y in BOARD_SIZE..BOARD_SIZE+10 {
-                //auto &cell = *drawables[ Atoms::Wall ];
-                //cell.setPosition( y*TILE_SIZE, x*TILE_SIZE );
-                //window.draw( cell );
+        for x in BOARD_SIZE..BOARD_SIZE+10 {
+            for y in 0..BOARD_SIZE {
+                let pos = Vector2f::new(x as f32*TILE_SIZE as f32, y as f32 *TILE_SIZE as f32 );
+                drawables[ atoms::Drawable::Wall as usize ].set_position(&pos);
+                window.draw( drawables[ atoms::Drawable::Wall as usize ].as_drawable_ref() );
             }
         }
 
-        // Draw the shape
-        window.draw(&circle);
         // Display things on screen
         window.display()
     }
