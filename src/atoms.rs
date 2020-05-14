@@ -79,14 +79,16 @@ impl Atoms {
     }
 
     pub fn click(&mut self, i : usize, j : usize ) {
-        if self.editing {
-            self.map[i][j] = if self.map[i][j] == 0 { 3 } else { 0 };
-            self.calculate_map();
-        } else {
-            if self.map[i][j] != 0 && ( self.player[i][j] == self.current_player || self.world[i][j] == 0 ) {
-                self.world[i][j]+= 1;
-                self.player[i][j] = self.current_player;
-                self.finished = false;
+        if i < 10 && j < 10 {
+            if self.editing {
+                self.map[i][j] = if self.map[i][j] == 0 { 3 } else { 0 };
+                self.calculate_map();
+            } else {
+                if self.map[i][j] != 0 && ( self.player[i][j] == self.current_player || self.world[i][j] == 0 ) {
+                    self.world[i][j]+= 1;
+                    self.player[i][j] = self.current_player;
+                    self.finished = false;
+                }
             }
         }
     }
