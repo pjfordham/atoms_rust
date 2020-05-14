@@ -11,11 +11,6 @@ use sfml::system::{Clock,Vector2f};
 use sfml::window::{ContextSettings, VideoMode, Key, Style, Event, mouse::Button};
 use sfml::graphics::{BlendMode,Transform,IntRect,Shape,RectangleShape,Drawable, Sprite,Font,Text,Texture,RenderStates, RenderWindow, RenderTarget, Color, Transformable};
 
-trait _Element {
-    fn set_position(&mut self, position: &Vector2f);
-    fn is_animated(&mut self) -> bool;
-}
-
 struct Number<'a> { // Nummber struct is valid for lifetime 'a where a is the intersection of
     // the lifetime of the referenced Font and the referenced Sprite background.
     // The sprite also has lifetime 'a since it contains a reference to a texture that is only
@@ -26,24 +21,14 @@ struct Number<'a> { // Nummber struct is valid for lifetime 'a where a is the in
     color : Color,
     background : &'a Sprite<'a>,
     number : u32,
-    position: Vector2f
 }
 
 // new takes the lifetimes of the font, and sprite as per above and returns a number with the intersection of those lifetimes
 impl<'a> Number<'a> {
     fn new( _font : &'a Font, _color : Color, _background : &'a Sprite<'a>, _number : u32) -> Number<'a> {
-        let number = Number{ font : _font, color : _color, background : _background, number : _number, position : Vector2f::new(0.,0.)  };
+        let number = Number{ font : _font, color : _color, background : _background, number : _number };
          number
     }
-}
-
-impl _Element for Number<'_> { // implicit elided lifetime not allowed here, this is the anonymous lifetime
-                               // nothing in the trait relies on lifetime of anything except Number
-    fn set_position(&mut self, position: &Vector2f) {
-        self.position.x = position.x;
-        self.position.y = position.y;
-    }
-    fn is_animated(&mut self) -> bool {false}
 }
 
 impl Drawable for Number<'_> {
@@ -80,22 +65,13 @@ struct SpriteElement<'a> // Again we have a reference to a sprite that must be v
 // a texture that must be valid.
 {
     background : &'a Sprite<'a>,
-    position: Vector2f
 }
 
 impl<'a> SpriteElement<'a> {
     fn new(_background : &'a Sprite<'a>) -> SpriteElement<'a> {
-        let number = SpriteElement{ background : _background, position : Vector2f::new(0.,0.)  };
+        let number = SpriteElement{ background : _background };
          number
     }
-}
-
-impl _Element for SpriteElement<'_> {
-    fn set_position(&mut self, position: &Vector2f) {
-        self.position.x = position.x;
-        self.position.y = position.y;
-    }
-    fn is_animated(&mut self) -> bool {false}
 }
 
 impl Drawable for SpriteElement<'_> {
@@ -114,22 +90,13 @@ impl Drawable for SpriteElement<'_> {
 
 struct RectangleShapeElement {
     color : Color,
-    position: Vector2f
 }
 
 impl<'a> RectangleShapeElement {
     fn new( _color : Color) -> RectangleShapeElement {
-        let number = RectangleShapeElement{ color : _color, position : Vector2f::new(0.,0.)  };
+        let number = RectangleShapeElement{ color : _color };
          number
     }
-}
-
-impl _Element for RectangleShapeElement {
-    fn set_position(&mut self, position: &Vector2f) {
-        self.position.x = position.x;
-        self.position.y = position.y;
-    }
-    fn is_animated(&mut self) -> bool {false}
 }
 
 impl Drawable for RectangleShapeElement {
@@ -137,7 +104,7 @@ impl Drawable for RectangleShapeElement {
     fn draw<'se, 'tex, 'sh, 'shte>(
         &'se self,
         target: &mut dyn RenderTarget,
-        _states: RenderStates<'tex, 'sh, 'shte>
+        states: RenderStates<'tex, 'sh, 'shte>
     )
     where
         'se: 'sh, {
@@ -145,8 +112,7 @@ impl Drawable for RectangleShapeElement {
         let mut shape = RectangleShape::new();
         shape.set_size(Vector2f::new(TILE_SIZE, TILE_SIZE));
         shape.set_fill_color( self.color );
-        shape.set_position( self.position );
-        target.draw(&shape);
+        target.draw_with_renderstates(&shape, states);
     }
 }
 
@@ -155,13 +121,12 @@ struct VolatileNumber<'a> {
     color : Color,
     background : &'a Sprite<'a>,
     number : u32,
-    position: Vector2f,
     master_clock : &'a Clock
 }
 
 impl<'a> VolatileNumber<'a> {
     fn new( _font : &'a Font, _color : Color, _background : &'a Sprite<'a>, _number : u32, clock : &'a Clock ) -> VolatileNumber<'a> {
-        let number = VolatileNumber{ font : _font, color : _color, background : _background, number : _number, position : Vector2f::new(0.,0.), master_clock : clock  };
+        let number = VolatileNumber{ font : _font, color : _color, background : _background, number : _number, master_clock : clock  };
         number
     }
     fn draw<'se, 'tex, 'sh, 'shte>(
@@ -195,14 +160,6 @@ impl<'a> VolatileNumber<'a> {
 
 }
 
-impl _Element for VolatileNumber<'_> {
-    fn set_position(&mut self, position: &Vector2f) {
-        self.position.x = position.x;
-        self.position.y = position.y;
-    }
-    fn is_animated(&mut self) -> bool {true}
-}
-
 impl Drawable for VolatileNumber<'_> {
 
     fn draw<'se, 'tex, 'sh, 'shte>(
@@ -221,7 +178,6 @@ impl Drawable for VolatileNumber<'_> {
 struct Explosion<'a> {
     background : &'a Sprite<'a>,
     explosion_sprite : [Sprite<'a> ; 12],
-    position: Vector2f,
     master_clock : &'a Clock
 }
 
@@ -246,7 +202,6 @@ impl<'a> Explosion<'a> {
                 Sprite::with_texture( _explosion_texture ),
                 Sprite::with_texture( _explosion_texture )
             ],
-            position : Vector2f::new(0.,0.),
             master_clock : clock };
 
         for i in 0..12 {
@@ -272,14 +227,6 @@ impl<'a> Explosion<'a> {
 
 }
 
-impl _Element for Explosion<'_> {
-    fn set_position(&mut self, position: &Vector2f) {
-        self.position.x = position.x;
-        self.position.y = position.y;
-    }
-    fn is_animated(&mut self) -> bool {true}
-}
-
 impl Drawable for Explosion<'_> {
 
     fn draw<'se, 'tex, 'sh, 'shte>(
@@ -295,14 +242,6 @@ impl Drawable for Explosion<'_> {
     }
 }
 
-trait Element: _Element + Drawable {
-      fn as_drawable_ref(&self) -> & dyn Drawable;
-}
-impl<T: _Element + Drawable> Element for T {
-  fn as_drawable_ref(&self) -> & dyn Drawable {
-        self
-    }
-}
 
 
 
@@ -356,7 +295,7 @@ fn main() {
 
     let clock = Clock::start();
 
-    let drawables: [& dyn Element; 31] = [
+    let drawables: [& dyn Drawable; 31] = [
         &SpriteElement::new( &stone_sprite ),
         &RectangleShapeElement::new( Color::RED ),
         &RectangleShapeElement::new( Color::YELLOW ),
@@ -446,7 +385,7 @@ fn main() {
                 let mut my_states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
                 my_states.transform.translate( x as f32*TILE_SIZE as f32, y as f32 *TILE_SIZE as f32 );
                 let content = atoms.get_content( x, y );
-                window.draw_with_renderstates( drawables[ content as usize ].as_drawable_ref(), my_states );
+                window.draw_with_renderstates( drawables[ content as usize ], my_states );
             }
         }
 
@@ -454,7 +393,7 @@ fn main() {
             for y in 0..BOARD_SIZE {
                 let mut my_states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
                 my_states.transform.translate( x as f32*TILE_SIZE as f32, y as f32 *TILE_SIZE as f32 );
-                window.draw_with_renderstates( drawables[ atoms::Drawable::Wall as usize ].as_drawable_ref(), my_states );
+                window.draw_with_renderstates( drawables[ atoms::Drawable::Wall as usize ], my_states );
             }
         }
 
