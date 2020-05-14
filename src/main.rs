@@ -17,7 +17,12 @@ trait _Element {
     fn is_animated(&mut self) -> bool;
 }
 
-struct Number<'a> {
+struct Number<'a> { // Nummber struct is valid for lifetime 'a where a is the intersection of
+    // the lifetime of the referenced Font and the referenced Sprite background.
+    // The sprite also has lifetime 'a since it contains a reference to a texture that is only
+    // valid for 'a. So if the texture is valid, then the sprite is valid, and the reference to
+    // the sprite is valid, and the font is valid, then number is valid.
+    // The color, number and posiion are owned directly by the Number.
     font : &'a Font,
     color : Color,
     background : &'a Sprite<'a>,
@@ -25,6 +30,7 @@ struct Number<'a> {
     position: Vector2f
 }
 
+// new takes the lifetimes of the font, and sprite as per above and returns a number with the intersection of those lifetimes
 impl<'a> Number<'a> {
     fn new( _font : &'a Font, _color : Color, _background : &'a Sprite<'a>, _number : u32) -> Number<'a> {
         let number = Number{ font : _font, color : _color, background : _background, number : _number, position : Vector2f::new(0.,0.)  };
@@ -32,7 +38,8 @@ impl<'a> Number<'a> {
     }
 }
 
-impl _Element for Number<'_> {
+impl _Element for Number<'_> { // implicit elided lifetime not allowed here, this is the anonymous lifetime
+                               // nothing in the trait relies on lifetime of anything except Number
     fn set_position(&mut self, position: &Vector2f) {
         self.position.x = position.x;
         self.position.y = position.y;
@@ -43,34 +50,39 @@ impl _Element for Number<'_> {
 
 impl Drawable for Number<'_> {
 
+    // Not sure about this one, the lifttime of self, se, must be equal to the lifetime of 'sh the shader in
+    // the renderstates, the texture and the shader texture assumidly have to be ok too?
     fn draw<'se, 'tex, 'sh, 'shte>(
         &'se self,
         target: &mut dyn RenderTarget,
-        _states: RenderStates<'tex, 'sh, 'shte>
+        states: RenderStates<'tex, 'sh, 'shte>
     )
     where
         'se: 'sh, {
 
-        let mut sprite = self.background.clone();
-        sprite.set_position( self.position );
-        target.draw(&sprite);
+        let mut my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
+        my_states.transform.translate( self.position.x, self.position.y );
+        let my_states2 = RenderStates::new( my_states.blend_mode, my_states.transform, my_states.texture, my_states.shader );
+
+        target.draw_with_renderstates(self.background, my_states);
 
         let mut text = Text::new( &self.number.to_string(), &self.font, TILE_SIZE as u32 );
 
         // center text
         let text_rect = text.local_bounds();
-        text.set_position( self.position );
         text.set_origin( Vector2f::new (text_rect.left + text_rect.width/2.0,
                                         text_rect.top  + text_rect.height/2.0));
         text.move_( Vector2f::new (0.5*TILE_SIZE, 0.5*TILE_SIZE));
 
-        text.set_fill_color( &self.color );
+        text.set_fill_color( self.color );
 
-        target.draw(&text);
+        target.draw_with_renderstates(&text, my_states2);
     }
 }
 
-struct SpriteElement<'a> {
+struct SpriteElement<'a> // Again we have a reference to a sprite that must be valid, and that sprite has a reference to
+// a texture that must be valid.
+{
     background : &'a Sprite<'a>,
     position: Vector2f
 }
@@ -140,7 +152,7 @@ impl Drawable for RectangleShapeElement {
 
         let mut shape = RectangleShape::new();
         shape.set_size(Vector2f::new(TILE_SIZE, TILE_SIZE));
-        shape.set_fill_color( &self.color );
+        shape.set_fill_color( self.color );
         shape.set_position( self.position );
         target.draw(&shape);
     }
@@ -183,10 +195,10 @@ impl<'a> VolatileNumber<'a> {
 
         if  frame >= 25 {
             let dimness = Color::rgba(255,255,255, ((50-frame) as u8) *9 );
-            text.set_fill_color( &(self.color * dimness) );
+            text.set_fill_color( self.color * dimness );
         } else {
             let dimness = Color::rgba(255,255,255, (frame as u8) *9 );
-            text.set_fill_color( &(self.color * dimness) );
+            text.set_fill_color( self.color * dimness );
         }
         target.draw(&text);
     }
@@ -350,7 +362,7 @@ fn main() {
             if elapsed.as_seconds() > 0.25 {
                 atoms.recalculate_board();
                 clock.restart();
-                //drawables[ Atoms::Bang ]->restart();
+                drawables[ atoms::Drawable::Bang as usize  ].restart();
             }
         }
 
@@ -373,7 +385,7 @@ fn main() {
                                 Button::Left => { atoms.click( (x / TILE_SIZE as i32) as usize,
                                                                 (y / TILE_SIZE as i32) as usize );
                                                   clock.restart();
-                                                  //drawables[ Atoms::Bang ]->restart()
+                                                  drawables[ atoms::Drawable::Bang as usize ].restart()
                                 },
                                 _ => {} }
                         },
@@ -392,7 +404,7 @@ fn main() {
             None => {}
         };
 
-        window.clear( &Color::BLACK );
+        window.clear( Color::BLACK );
 
         for x in 0..BOARD_SIZE {
             for y in 0..BOARD_SIZE {
@@ -413,7 +425,7 @@ fn main() {
 
         let mut text = Text::new( "Score Board", &font, (TILE_SIZE-5.0) as u32 );
         text.set_position( Vector2f::new(BOARD_SIZE as f32*(TILE_SIZE as f32 +9.5) as f32, TILE_SIZE as f32));
-        text.set_fill_color(&Color::WHITE);
+        text.set_fill_color(Color::WHITE );
 
         // center text
         let text_rect = text.local_bounds();
@@ -437,10 +449,10 @@ fn main() {
             text.set_position( Vector2f::new(BOARD_SIZE as f32 *TILE_SIZE+5.0, TILE_SIZE*(i as f32+3.0)-5.0));
             if i == atoms.get_current_player() {
                 text.set_outline_thickness(5.0);
-                text.set_fill_color(&p_color[i]);
-                text.set_outline_color(&Color::WHITE);
+                text.set_fill_color( p_color[i] );
+                text.set_outline_color(Color::WHITE);
             } else {
-                text.set_fill_color(&p_color[i]);
+                text.set_fill_color( p_color[i] );
             }
             window.draw(&text);
         }
