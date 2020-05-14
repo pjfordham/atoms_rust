@@ -9,7 +9,7 @@ static BOARD_SIZE: usize = 10;
 
 use sfml::system::{Clock,Vector2f};
 use sfml::window::{ContextSettings, VideoMode, Key, Style, Event, mouse::Button};
-use sfml::graphics::{Shape,RectangleShape,Drawable, Sprite,Font,Text,Texture,RenderStates, RenderWindow, RenderTarget, Color, Transformable};
+use sfml::graphics::{IntRect,Shape,RectangleShape,Drawable, Sprite,Font,Text,Texture,RenderStates, RenderWindow, RenderTarget, Color, Transformable};
 
 trait _Element {
     fn set_position(&mut self, position: &Vector2f);
@@ -210,8 +210,8 @@ impl _Element for VolatileNumber<'_> {
         self.position.x = position.x;
         self.position.y = position.y;
     }
-    fn restart(&mut self) {}
-    fn is_animated(&mut self) -> bool {false}
+    fn restart(&mut self) {self.master_clock.restart();}
+    fn is_animated(&mut self) -> bool {true}
 }
 
 impl Drawable for VolatileNumber<'_> {
@@ -225,6 +225,88 @@ impl Drawable for VolatileNumber<'_> {
         'se: 'sh, {
         let mut frame = self.master_clock.elapsed_time().as_milliseconds() / (1000 / 50);
         frame = frame % 50;
+        self.draw( target, _states, frame.try_into().unwrap()  );
+    }
+}
+
+struct Explosion<'a> {
+    background : &'a Sprite<'a>,
+    explosion_sprite : [Sprite<'a> ; 12],
+    position: Vector2f,
+    master_clock : Clock
+}
+
+
+
+impl<'a> Explosion<'a> {
+    fn new( _background : &'a Sprite<'a>, _explosion_texture : &'a Texture ) -> Explosion<'a> {
+
+        let mut number = Explosion{
+            background : _background,
+            explosion_sprite : [
+                Sprite::with_texture( _explosion_texture ),
+                Sprite::with_texture( _explosion_texture ),
+                Sprite::with_texture( _explosion_texture ),
+                Sprite::with_texture( _explosion_texture ),
+                Sprite::with_texture( _explosion_texture ),
+                Sprite::with_texture( _explosion_texture ),
+                Sprite::with_texture( _explosion_texture ),
+                Sprite::with_texture( _explosion_texture ),
+                Sprite::with_texture( _explosion_texture ),
+                Sprite::with_texture( _explosion_texture ),
+                Sprite::with_texture( _explosion_texture ),
+                Sprite::with_texture( _explosion_texture )
+            ],
+            position : Vector2f::new(0.,0.),
+            master_clock : Clock::start()  };
+
+        for i in 0..12 {
+            number.explosion_sprite[i].set_texture_rect( &IntRect::new(i as i32 * 96 ,0,96,96) );
+            number.explosion_sprite[i].scale( Vector2f::new( TILE_SIZE as f32 / 96.0, TILE_SIZE as f32 / 96.0) );
+        }
+        number
+    }
+    fn draw<'se, 'tex, 'sh, 'shte>(
+        &'se self,
+        target: &mut dyn RenderTarget,
+        _states: RenderStates<'tex, 'sh, 'shte>,
+        frame : usize
+    )
+    where
+        'se: 'sh, {
+        let mut sprite = self.background.clone();
+        sprite.set_position( self.position );
+        target.draw(&sprite);
+
+        let mut sprite2 = self.explosion_sprite[ frame ].clone();
+        sprite2.set_position( self.position );
+        target.draw(&sprite2);
+    }
+
+}
+
+impl _Element for Explosion<'_> {
+    fn set_position(&mut self, position: &Vector2f) {
+        self.position.x = position.x;
+        self.position.y = position.y;
+    }
+    fn restart(&mut self) {
+        self.master_clock.restart();
+    }
+    fn is_animated(&mut self) -> bool {true}
+}
+
+impl Drawable for Explosion<'_> {
+
+    fn draw<'se, 'tex, 'sh, 'shte>(
+        &'se self,
+        target: &mut dyn RenderTarget,
+        _states: RenderStates<'tex, 'sh, 'shte>
+    )
+    where
+        'se: 'sh, {
+        let mut frame = self.master_clock.elapsed_time().as_milliseconds() / (1000 / 48);
+        frame = frame % 12;
         self.draw( target, _states, frame.try_into().unwrap()  );
     }
 }
@@ -270,6 +352,11 @@ fn main() {
 
     wood_sprite.set_scale(  Vector2f::new (TILE_SIZE / wood_size.x as f32, TILE_SIZE / wood_size.y as f32 ));
 
+    let explosion_texture = match Texture::from_file("explosion.png") {
+        Some(exp_texture) => exp_texture,
+        None => panic!("Texture error.")
+    };
+
     let p_color = [ Color::RED, Color::GREEN, Color::BLUE, Color::YELLOW ];
     let s_color = Color::WHITE;
 
@@ -289,7 +376,7 @@ fn main() {
     let mut x01 = RectangleShapeElement::new( Color::RED );
     let mut x02 = RectangleShapeElement::new( Color::YELLOW );
     let mut x03 = SpriteElement::new( &wood_sprite );
-    let mut x04 = SpriteElement::new( &wood_sprite ); // FIXME to explosion
+    let mut x04 = Explosion::new( &wood_sprite, &explosion_texture );
 
     let mut x05 = Number::new( &font, p_color[0], &wood_sprite, 1 );
     let mut x06 = Number::new( &font, p_color[0], &wood_sprite, 2 );
