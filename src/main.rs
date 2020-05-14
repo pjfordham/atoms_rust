@@ -372,75 +372,38 @@ fn main() {
 
     let mut clock = Clock::start();
 
-    let mut x00 = SpriteElement::new( &stone_sprite );
-    let mut x01 = RectangleShapeElement::new( Color::RED );
-    let mut x02 = RectangleShapeElement::new( Color::YELLOW );
-    let mut x03 = SpriteElement::new( &wood_sprite );
-    let mut x04 = Explosion::new( &wood_sprite, &explosion_texture );
-
-    let mut x05 = Number::new( &font, p_color[0], &wood_sprite, 1 );
-    let mut x06 = Number::new( &font, p_color[0], &wood_sprite, 2 );
-    let mut x07 = Number::new( &font, p_color[0], &wood_sprite, 3 );
-    let mut x08 = VolatileNumber::new( &font, p_color[0], &wood_sprite, 1 );
-    let mut x09 = VolatileNumber::new( &font, p_color[0], &wood_sprite, 2 );
-    let mut x10 = VolatileNumber::new( &font, p_color[0], &wood_sprite, 3 );
-
-    let mut x11 = Number::new( &font, p_color[1], &wood_sprite, 1 );
-    let mut x12 = Number::new( &font, p_color[1], &wood_sprite, 2 );
-    let mut x13 = Number::new( &font, p_color[1], &wood_sprite, 3 );
-    let mut x14 = VolatileNumber::new( &font, p_color[1], &wood_sprite, 1 );
-    let mut x15 = VolatileNumber::new( &font, p_color[1], &wood_sprite, 2 );
-    let mut x16 = VolatileNumber::new( &font, p_color[1], &wood_sprite, 3 );
-
-    let mut x17 = Number::new( &font, p_color[2], &wood_sprite, 1 );
-    let mut x18 = Number::new( &font, p_color[2], &wood_sprite, 2 );
-    let mut x19 = Number::new( &font, p_color[2], &wood_sprite, 3 );
-    let mut x20 = VolatileNumber::new( &font, p_color[2], &wood_sprite, 1 );
-    let mut x21 = VolatileNumber::new( &font, p_color[2], &wood_sprite, 2 );
-    let mut x22 = VolatileNumber::new( &font, p_color[2], &wood_sprite, 3 );
-
-    let mut x23 = Number::new( &font, p_color[3], &wood_sprite, 1 );
-    let mut x24 = Number::new( &font, p_color[3], &wood_sprite, 2 );
-    let mut x25 = Number::new( &font, p_color[3], &wood_sprite, 3 );
-    let mut x26 = VolatileNumber::new( &font, p_color[3], &wood_sprite, 1 );
-    let mut x27 = VolatileNumber::new( &font, p_color[3], &wood_sprite, 2 );
-    let mut x28 = VolatileNumber::new( &font, p_color[3], &wood_sprite, 3 );
-
-    let mut x29 = Number::new( &font, s_color, &wood_sprite, 1 );
-    let mut x30 = Number::new( &font, s_color, &wood_sprite, 2 );
-
     let drawables: [& mut dyn Element; 31] = [
-        &mut x00,
-        &mut x01,
-        &mut x02,
-        &mut x03,
-        &mut x04,
-        &mut x05,
-        &mut x06,
-        &mut x07,
-        &mut x08,
-        &mut x09,
-        &mut x10,
-        &mut x11,
-        &mut x12,
-        &mut x13,
-        &mut x14,
-        &mut x15,
-        &mut x16,
-        &mut x17,
-        &mut x18,
-        &mut x19,
-        &mut x20,
-        &mut x21,
-        &mut x22,
-        &mut x23,
-        &mut x24,
-        &mut x25,
-        &mut x26,
-        &mut x27,
-        &mut x28,
-        &mut x29,
-        &mut x30
+        &mut SpriteElement::new( &stone_sprite ),
+        &mut RectangleShapeElement::new( Color::RED ),
+        &mut RectangleShapeElement::new( Color::YELLOW ),
+        &mut SpriteElement::new( &wood_sprite ),
+        &mut Explosion::new( &wood_sprite, &explosion_texture ),
+        &mut Number::new( &font, p_color[0], &wood_sprite, 1 ),
+        &mut Number::new( &font, p_color[0], &wood_sprite, 2 ),
+        &mut Number::new( &font, p_color[0], &wood_sprite, 3 ),
+        &mut VolatileNumber::new( &font, p_color[0], &wood_sprite, 1 ),
+        &mut VolatileNumber::new( &font, p_color[0], &wood_sprite, 2 ),
+        &mut VolatileNumber::new( &font, p_color[0], &wood_sprite, 3 ),
+        &mut Number::new( &font, p_color[1], &wood_sprite, 1 ),
+        &mut Number::new( &font, p_color[1], &wood_sprite, 2 ),
+        &mut Number::new( &font, p_color[1], &wood_sprite, 3 ),
+        &mut VolatileNumber::new( &font, p_color[1], &wood_sprite, 1 ),
+        &mut VolatileNumber::new( &font, p_color[1], &wood_sprite, 2 ),
+        &mut VolatileNumber::new( &font, p_color[1], &wood_sprite, 3 ),
+        &mut Number::new( &font, p_color[2], &wood_sprite, 1 ),
+        &mut Number::new( &font, p_color[2], &wood_sprite, 2 ),
+        &mut Number::new( &font, p_color[2], &wood_sprite, 3 ),
+        &mut VolatileNumber::new( &font, p_color[2], &wood_sprite, 1 ),
+        &mut VolatileNumber::new( &font, p_color[2], &wood_sprite, 2 ),
+        &mut VolatileNumber::new( &font, p_color[2], &wood_sprite, 3 ),
+        &mut Number::new( &font, p_color[3], &wood_sprite, 1 ),
+        &mut Number::new( &font, p_color[3], &wood_sprite, 2 ),
+        &mut Number::new( &font, p_color[3], &wood_sprite, 3 ),
+        &mut VolatileNumber::new( &font, p_color[3], &wood_sprite, 1 ),
+        &mut VolatileNumber::new( &font, p_color[3], &wood_sprite, 2 ),
+        &mut VolatileNumber::new( &font, p_color[3], &wood_sprite, 3 ),
+        &mut Number::new( &font, s_color, &wood_sprite, 1 ),
+        &mut Number::new( &font, s_color, &wood_sprite, 2 ),
    ];
 
     while window.is_open() {
