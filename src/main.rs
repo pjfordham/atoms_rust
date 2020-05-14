@@ -6,6 +6,7 @@ extern crate sfml;
 
 static TILE_SIZE: f32 = 50.0;
 static BOARD_SIZE: usize = 10;
+static BOARD_SIZE_F: f32 = BOARD_SIZE as f32;
 
 use sfml::system::{Clock,Vector2f};
 use sfml::window::{ContextSettings, VideoMode, Key, Style, Event, mouse::Button};
@@ -206,7 +207,7 @@ impl<'a> Explosion<'a> {
 
         for i in 0..12 {
             number.explosion_sprite[i].set_texture_rect( &IntRect::new(i as i32 * 96 ,0,96,96) );
-            number.explosion_sprite[i].scale( Vector2f::new( TILE_SIZE as f32 / 96.0, TILE_SIZE as f32 / 96.0) );
+            number.explosion_sprite[i].scale( Vector2f::new( TILE_SIZE / 96.0, TILE_SIZE / 96.0) );
         }
         number
     }
@@ -383,7 +384,7 @@ fn main() {
         for x in 0..BOARD_SIZE {
             for y in 0..BOARD_SIZE {
                 let mut my_states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
-                my_states.transform.translate( x as f32*TILE_SIZE as f32, y as f32 *TILE_SIZE as f32 );
+                my_states.transform.translate( x as f32 * TILE_SIZE, y as f32 * TILE_SIZE );
                 let content = atoms.get_content( x, y );
                 window.draw_with_renderstates( drawables[ content as usize ], my_states );
             }
@@ -392,20 +393,19 @@ fn main() {
         for x in BOARD_SIZE..BOARD_SIZE+10 {
             for y in 0..BOARD_SIZE {
                 let mut my_states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
-                my_states.transform.translate( x as f32*TILE_SIZE as f32, y as f32 *TILE_SIZE as f32 );
+                my_states.transform.translate( x as f32 * TILE_SIZE, y as f32 * TILE_SIZE );
                 window.draw_with_renderstates( drawables[ atoms::Drawable::Wall as usize ], my_states );
             }
         }
 
-        let mut text = Text::new( "Score Board", &font, (TILE_SIZE-5.0) as u32 );
-        text.set_position( Vector2f::new(BOARD_SIZE as f32*(TILE_SIZE as f32 +9.5) as f32, TILE_SIZE as f32));
+        let mut text = Text::new( "Score Board", &font, ( TILE_SIZE -5.0 ) as u32 );
+        text.set_position( Vector2f::new(TILE_SIZE * ( ( BOARD_SIZE_F - 0.5 )  * 3.0 / 2.0 ),
+                                         TILE_SIZE) );
         text.set_fill_color(Color::WHITE );
 
-        // center text
+        // center text horizontally
         let text_rect = text.local_bounds();
-        text.set_origin( Vector2f::new(text_rect.left + text_rect.width/2.0,
-                       text_rect.top  + text_rect.height/2.0));
-        text.move_( Vector2f::new(0.5*TILE_SIZE, 0.5*TILE_SIZE));
+        text.set_origin( Vector2f::new( text_rect.left + (text_rect.width/2.0), 0.0) );
 
         window.draw(&text);
 
@@ -420,7 +420,8 @@ fn main() {
                 }
             };
             let mut text = Text::new( &s, &font, (TILE_SIZE-5.0) as u32 );
-            text.set_position( Vector2f::new(BOARD_SIZE as f32 *TILE_SIZE+5.0, TILE_SIZE*(i as f32+3.0)-5.0));
+            text.set_position( Vector2f::new(BOARD_SIZE_F * TILE_SIZE + 5.0,
+                                             TILE_SIZE * (i as f32 +3.0 ) -5.0 ) );
             if i == atoms.get_current_player() {
                 text.set_outline_thickness(5.0);
                 text.set_fill_color( p_color[i] );
