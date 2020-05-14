@@ -108,14 +108,14 @@ impl Drawable for SpriteElement<'_> {
     fn draw<'se, 'tex, 'sh, 'shte>(
         &'se self,
         target: &mut dyn RenderTarget,
-        _states: RenderStates<'tex, 'sh, 'shte>
+        states: RenderStates<'tex, 'sh, 'shte>
     )
     where
         'se: 'sh, {
 
-        let mut sprite = self.background.clone();
-        sprite.set_position( self.position );
-        target.draw(&sprite);
+        let mut my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
+        my_states.transform.translate( self.position.x, self.position.y );
+        target.draw_with_renderstates(self.background, my_states);
     }
 }
 
@@ -175,14 +175,14 @@ impl<'a> VolatileNumber<'a> {
     fn draw<'se, 'tex, 'sh, 'shte>(
         &'se self,
         target: &mut dyn RenderTarget,
-        _states: RenderStates<'tex, 'sh, 'shte>,
+        states: RenderStates<'tex, 'sh, 'shte>,
         frame : usize
     )
     where
         'se: 'sh, {
-        let mut sprite = self.background.clone();
-        sprite.set_position( self.position );
-        target.draw(&sprite);
+        let mut my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
+        my_states.transform.translate( self.position.x, self.position.y );
+        target.draw_with_renderstates(self.background, my_states);
 
         let mut text = Text::new( &self.number.to_string(), &self.font, TILE_SIZE as u32 );
 
@@ -269,18 +269,19 @@ impl<'a> Explosion<'a> {
     fn draw<'se, 'tex, 'sh, 'shte>(
         &'se self,
         target: &mut dyn RenderTarget,
-        _states: RenderStates<'tex, 'sh, 'shte>,
+        states: RenderStates<'tex, 'sh, 'shte>,
         frame : usize
     )
     where
         'se: 'sh, {
-        let mut sprite = self.background.clone();
-        sprite.set_position( self.position );
-        target.draw(&sprite);
 
-        let mut sprite2 = self.explosion_sprite[ frame ].clone();
-        sprite2.set_position( self.position );
-        target.draw(&sprite2);
+        let mut my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
+        my_states.transform.translate( self.position.x, self.position.y );
+        target.draw_with_renderstates( self.background, my_states );
+
+        let mut my_states2 = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
+        my_states2.transform.translate( self.position.x, self.position.y );
+        target.draw_with_renderstates( &self.explosion_sprite[frame], my_states2 );
     }
 
 }
