@@ -9,7 +9,7 @@ static BOARD_SIZE: usize = 10;
 
 use sfml::system::{Clock,Vector2f};
 use sfml::window::{ContextSettings, VideoMode, Key, Style, Event, mouse::Button};
-use sfml::graphics::{IntRect,Shape,RectangleShape,Drawable, Sprite,Font,Text,Texture,RenderStates, RenderWindow, RenderTarget, Color, Transformable};
+use sfml::graphics::{BlendMode,Transform,IntRect,Shape,RectangleShape,Drawable, Sprite,Font,Text,Texture,RenderStates, RenderWindow, RenderTarget, Color, Transformable};
 
 trait _Element {
     fn set_position(&mut self, position: &Vector2f);
@@ -60,9 +60,7 @@ impl Drawable for Number<'_> {
     where
         'se: 'sh, {
 
-        let mut my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
-        my_states.transform.translate( self.position.x, self.position.y );
-        let my_states2 = RenderStates::new( my_states.blend_mode, my_states.transform, my_states.texture, my_states.shader );
+        let my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
 
         target.draw_with_renderstates(self.background, my_states);
 
@@ -76,7 +74,7 @@ impl Drawable for Number<'_> {
 
         text.set_fill_color( self.color );
 
-        target.draw_with_renderstates(&text, my_states2);
+        target.draw_with_renderstates(&text, states);
     }
 }
 
@@ -113,9 +111,7 @@ impl Drawable for SpriteElement<'_> {
     where
         'se: 'sh, {
 
-        let mut my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
-        my_states.transform.translate( self.position.x, self.position.y );
-        target.draw_with_renderstates(self.background, my_states);
+        target.draw_with_renderstates(self.background, states);
     }
 }
 
@@ -180,15 +176,13 @@ impl<'a> VolatileNumber<'a> {
     )
     where
         'se: 'sh, {
-        let mut my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
-        my_states.transform.translate( self.position.x, self.position.y );
+        let my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
         target.draw_with_renderstates(self.background, my_states);
 
         let mut text = Text::new( &self.number.to_string(), &self.font, TILE_SIZE as u32 );
 
         // center text
         let text_rect = text.local_bounds();
-        text.set_position( self.position );
         text.set_origin( Vector2f::new (text_rect.left + text_rect.width/2.0,
                                         text_rect.top  + text_rect.height/2.0));
         text.move_( Vector2f::new (0.5*TILE_SIZE, 0.5*TILE_SIZE));
@@ -200,7 +194,7 @@ impl<'a> VolatileNumber<'a> {
             let dimness = Color::rgba(255,255,255, (frame as u8) *9 );
             text.set_fill_color( self.color * dimness );
         }
-        target.draw(&text);
+        target.draw_with_renderstates(&text, my_states);
     }
 
 }
@@ -275,13 +269,10 @@ impl<'a> Explosion<'a> {
     where
         'se: 'sh, {
 
-        let mut my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
-        my_states.transform.translate( self.position.x, self.position.y );
+        let my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
         target.draw_with_renderstates( self.background, my_states );
 
-        let mut my_states2 = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
-        my_states2.transform.translate( self.position.x, self.position.y );
-        target.draw_with_renderstates( &self.explosion_sprite[frame], my_states2 );
+        target.draw_with_renderstates( &self.explosion_sprite[frame], states );
     }
 
 }
@@ -313,10 +304,10 @@ impl Drawable for Explosion<'_> {
 }
 
 trait Element: _Element + Drawable {
-      fn as_drawable_ref(&mut self) -> & dyn Drawable;
+      fn as_drawable_ref(&self) -> & dyn Drawable;
 }
 impl<T: _Element + Drawable> Element for T {
-  fn as_drawable_ref(&mut self) -> & dyn Drawable {
+  fn as_drawable_ref(&self) -> & dyn Drawable {
         self
     }
 }
@@ -373,6 +364,7 @@ fn main() {
 
     let mut clock = Clock::start();
 
+    // These can all nearly be const... restart
     let drawables: [& mut dyn Element; 31] = [
         &mut SpriteElement::new( &stone_sprite ),
         &mut RectangleShapeElement::new( Color::RED ),
@@ -459,18 +451,18 @@ fn main() {
 
         for x in 0..BOARD_SIZE {
             for y in 0..BOARD_SIZE {
-                let pos = Vector2f::new(x as f32*TILE_SIZE as f32, y as f32 *TILE_SIZE as f32 );
+                let mut my_states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
+                my_states.transform.translate( x as f32*TILE_SIZE as f32, y as f32 *TILE_SIZE as f32 );
                 let content = atoms.get_content( x, y );
-                drawables[ content as usize ].set_position( &pos );
-                window.draw( drawables[ content as usize ].as_drawable_ref() );
+                window.draw_with_renderstates( drawables[ content as usize ].as_drawable_ref(), my_states );
             }
         }
 
         for x in BOARD_SIZE..BOARD_SIZE+10 {
             for y in 0..BOARD_SIZE {
-                let pos = Vector2f::new(x as f32*TILE_SIZE as f32, y as f32 *TILE_SIZE as f32 );
-                drawables[ atoms::Drawable::Wall as usize ].set_position(&pos);
-                window.draw( drawables[ atoms::Drawable::Wall as usize ].as_drawable_ref() );
+                let mut my_states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
+                my_states.transform.translate( x as f32*TILE_SIZE as f32, y as f32 *TILE_SIZE as f32 );
+                window.draw_with_renderstates( drawables[ atoms::Drawable::Wall as usize ].as_drawable_ref(), my_states );
             }
         }
 
