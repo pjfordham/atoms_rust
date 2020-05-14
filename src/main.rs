@@ -13,7 +13,6 @@ use sfml::graphics::{BlendMode,Transform,IntRect,Shape,RectangleShape,Drawable, 
 
 trait _Element {
     fn set_position(&mut self, position: &Vector2f);
-    fn restart(&mut self);
     fn is_animated(&mut self) -> bool;
 }
 
@@ -44,7 +43,6 @@ impl _Element for Number<'_> { // implicit elided lifetime not allowed here, thi
         self.position.x = position.x;
         self.position.y = position.y;
     }
-    fn restart(&mut self) {}
     fn is_animated(&mut self) -> bool {false}
 }
 
@@ -97,7 +95,6 @@ impl _Element for SpriteElement<'_> {
         self.position.x = position.x;
         self.position.y = position.y;
     }
-    fn restart(&mut self) {}
     fn is_animated(&mut self) -> bool {false}
 }
 
@@ -132,7 +129,6 @@ impl _Element for RectangleShapeElement {
         self.position.x = position.x;
         self.position.y = position.y;
     }
-    fn restart(&mut self) {}
     fn is_animated(&mut self) -> bool {false}
 }
 
@@ -160,13 +156,13 @@ struct VolatileNumber<'a> {
     background : &'a Sprite<'a>,
     number : u32,
     position: Vector2f,
-    master_clock : Clock
+    master_clock : &'a Clock
 }
 
 impl<'a> VolatileNumber<'a> {
-    fn new( _font : &'a Font, _color : Color, _background : &'a Sprite<'a>, _number : u32) -> VolatileNumber<'a> {
-        let number = VolatileNumber{ font : _font, color : _color, background : _background, number : _number, position : Vector2f::new(0.,0.), master_clock : Clock::start()  };
-         number
+    fn new( _font : &'a Font, _color : Color, _background : &'a Sprite<'a>, _number : u32, clock : &'a Clock ) -> VolatileNumber<'a> {
+        let number = VolatileNumber{ font : _font, color : _color, background : _background, number : _number, position : Vector2f::new(0.,0.), master_clock : clock  };
+        number
     }
     fn draw<'se, 'tex, 'sh, 'shte>(
         &'se self,
@@ -204,7 +200,6 @@ impl _Element for VolatileNumber<'_> {
         self.position.x = position.x;
         self.position.y = position.y;
     }
-    fn restart(&mut self) {self.master_clock.restart();}
     fn is_animated(&mut self) -> bool {true}
 }
 
@@ -227,13 +222,13 @@ struct Explosion<'a> {
     background : &'a Sprite<'a>,
     explosion_sprite : [Sprite<'a> ; 12],
     position: Vector2f,
-    master_clock : Clock
+    master_clock : &'a Clock
 }
 
 
 
 impl<'a> Explosion<'a> {
-    fn new( _background : &'a Sprite<'a>, _explosion_texture : &'a Texture ) -> Explosion<'a> {
+    fn new( _background : &'a Sprite<'a>, _explosion_texture : &'a Texture, clock : &'a Clock ) -> Explosion<'a> {
 
         let mut number = Explosion{
             background : _background,
@@ -252,7 +247,7 @@ impl<'a> Explosion<'a> {
                 Sprite::with_texture( _explosion_texture )
             ],
             position : Vector2f::new(0.,0.),
-            master_clock : Clock::start()  };
+            master_clock : clock };
 
         for i in 0..12 {
             number.explosion_sprite[i].set_texture_rect( &IntRect::new(i as i32 * 96 ,0,96,96) );
@@ -281,9 +276,6 @@ impl _Element for Explosion<'_> {
     fn set_position(&mut self, position: &Vector2f) {
         self.position.x = position.x;
         self.position.y = position.y;
-    }
-    fn restart(&mut self) {
-        self.master_clock.restart();
     }
     fn is_animated(&mut self) -> bool {true}
 }
@@ -362,50 +354,51 @@ fn main() {
 
     window.set_framerate_limit( 60 );
 
-    let mut clock = Clock::start();
+    let clock = Clock::start();
 
-    // These can all nearly be const... restart
-    let drawables: [& mut dyn Element; 31] = [
-        &mut SpriteElement::new( &stone_sprite ),
-        &mut RectangleShapeElement::new( Color::RED ),
-        &mut RectangleShapeElement::new( Color::YELLOW ),
-        &mut SpriteElement::new( &wood_sprite ),
-        &mut Explosion::new( &wood_sprite, &explosion_texture ),
-        &mut Number::new( &font, p_color[0], &wood_sprite, 1 ),
-        &mut Number::new( &font, p_color[0], &wood_sprite, 2 ),
-        &mut Number::new( &font, p_color[0], &wood_sprite, 3 ),
-        &mut VolatileNumber::new( &font, p_color[0], &wood_sprite, 1 ),
-        &mut VolatileNumber::new( &font, p_color[0], &wood_sprite, 2 ),
-        &mut VolatileNumber::new( &font, p_color[0], &wood_sprite, 3 ),
-        &mut Number::new( &font, p_color[1], &wood_sprite, 1 ),
-        &mut Number::new( &font, p_color[1], &wood_sprite, 2 ),
-        &mut Number::new( &font, p_color[1], &wood_sprite, 3 ),
-        &mut VolatileNumber::new( &font, p_color[1], &wood_sprite, 1 ),
-        &mut VolatileNumber::new( &font, p_color[1], &wood_sprite, 2 ),
-        &mut VolatileNumber::new( &font, p_color[1], &wood_sprite, 3 ),
-        &mut Number::new( &font, p_color[2], &wood_sprite, 1 ),
-        &mut Number::new( &font, p_color[2], &wood_sprite, 2 ),
-        &mut Number::new( &font, p_color[2], &wood_sprite, 3 ),
-        &mut VolatileNumber::new( &font, p_color[2], &wood_sprite, 1 ),
-        &mut VolatileNumber::new( &font, p_color[2], &wood_sprite, 2 ),
-        &mut VolatileNumber::new( &font, p_color[2], &wood_sprite, 3 ),
-        &mut Number::new( &font, p_color[3], &wood_sprite, 1 ),
-        &mut Number::new( &font, p_color[3], &wood_sprite, 2 ),
-        &mut Number::new( &font, p_color[3], &wood_sprite, 3 ),
-        &mut VolatileNumber::new( &font, p_color[3], &wood_sprite, 1 ),
-        &mut VolatileNumber::new( &font, p_color[3], &wood_sprite, 2 ),
-        &mut VolatileNumber::new( &font, p_color[3], &wood_sprite, 3 ),
-        &mut Number::new( &font, s_color, &wood_sprite, 1 ),
-        &mut Number::new( &font, s_color, &wood_sprite, 2 ),
+    let drawables: [& dyn Element; 31] = [
+        &SpriteElement::new( &stone_sprite ),
+        &RectangleShapeElement::new( Color::RED ),
+        &RectangleShapeElement::new( Color::YELLOW ),
+        &SpriteElement::new( &wood_sprite ),
+        &Explosion::new( &wood_sprite, &explosion_texture, &clock ),
+        &Number::new( &font, p_color[0], &wood_sprite, 1 ),
+        &Number::new( &font, p_color[0], &wood_sprite, 2 ),
+        &Number::new( &font, p_color[0], &wood_sprite, 3 ),
+        &VolatileNumber::new( &font, p_color[0], &wood_sprite, 1, &clock ),
+        &VolatileNumber::new( &font, p_color[0], &wood_sprite, 2, &clock ),
+        &VolatileNumber::new( &font, p_color[0], &wood_sprite, 3, &clock ),
+        &Number::new( &font, p_color[1], &wood_sprite, 1 ),
+        &Number::new( &font, p_color[1], &wood_sprite, 2 ),
+        &Number::new( &font, p_color[1], &wood_sprite, 3 ),
+        &VolatileNumber::new( &font, p_color[1], &wood_sprite, 1, &clock ),
+        &VolatileNumber::new( &font, p_color[1], &wood_sprite, 2, &clock ),
+        &VolatileNumber::new( &font, p_color[1], &wood_sprite, 3, &clock ),
+        &Number::new( &font, p_color[2], &wood_sprite, 1 ),
+        &Number::new( &font, p_color[2], &wood_sprite, 2 ),
+        &Number::new( &font, p_color[2], &wood_sprite, 3 ),
+        &VolatileNumber::new( &font, p_color[2], &wood_sprite, 1, &clock ),
+        &VolatileNumber::new( &font, p_color[2], &wood_sprite, 2, &clock ),
+        &VolatileNumber::new( &font, p_color[2], &wood_sprite, 3, &clock ),
+        &Number::new( &font, p_color[3], &wood_sprite, 1 ),
+        &Number::new( &font, p_color[3], &wood_sprite, 2 ),
+        &Number::new( &font, p_color[3], &wood_sprite, 3 ),
+        &VolatileNumber::new( &font, p_color[3], &wood_sprite, 1, &clock ),
+        &VolatileNumber::new( &font, p_color[3], &wood_sprite, 2, &clock ),
+        &VolatileNumber::new( &font, p_color[3], &wood_sprite, 3, &clock ),
+        &Number::new( &font, s_color, &wood_sprite, 1 ),
+        &Number::new( &font, s_color, &wood_sprite, 2 ),
    ];
+
+    let mut start_time = clock.elapsed_time();
 
     while window.is_open() {
         if !atoms.finished {
-            let elapsed = clock.elapsed_time();
+            let temp = clock.elapsed_time();
+            let elapsed = temp - start_time;
             if elapsed.as_seconds() > 0.25 {
                 atoms.recalculate_board();
-                clock.restart();
-                drawables[ atoms::Drawable::Bang as usize  ].restart();
+                start_time = temp;
             }
         }
 
@@ -427,8 +420,7 @@ fn main() {
                             match button {
                                 Button::Left => { atoms.click( (x / TILE_SIZE as i32) as usize,
                                                                 (y / TILE_SIZE as i32) as usize );
-                                                  clock.restart();
-                                                  drawables[ atoms::Drawable::Bang as usize ].restart()
+                                                  start_time = clock.elapsed_time();
                                 },
                                 _ => {} }
                         },
