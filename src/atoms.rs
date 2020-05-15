@@ -1,3 +1,5 @@
+// Adapt code to have dynamic board size
+// move this random number stuff into a class
 use std::cmp;
 
 
@@ -199,43 +201,43 @@ impl Atoms {
             if self.map[i][j] == 0 {
                 Drawable::Wall
             }
+            else if self.world[i][j] > self.map[i][j]  {
+                Drawable::Bang
+            }
             else {
                 let is_volatile = self.world[i][j] == self.map[i][j];
-                if self.world[i][j] > self.map[i][j]  {
-                    Drawable::Bang
-                }
-                else {
-                    match self.world[i][j] {
-                        0 => Drawable::Empty,
-                        1 => match self.player[i][j] {
-                            0 => if is_volatile {Drawable::P1VOne} else {Drawable::P1One},
-                            1 => if is_volatile {Drawable::P2VOne} else {Drawable::P2One},
-                            2 => if is_volatile {Drawable::P3VOne} else {Drawable::P3One},
-                            3 => if is_volatile {Drawable::P4VOne} else {Drawable::P4One},
-                            _ => Drawable::SOne,
-                        },
-                        2 => match self.player[i][j] {
-                            0 => if is_volatile {Drawable::P1VTwo} else {Drawable::P1Two},
-                            1 => if is_volatile {Drawable::P2VTwo} else {Drawable::P2Two},
-                            2 => if is_volatile {Drawable::P3VTwo} else {Drawable::P3Two},
-                            3 => if is_volatile {Drawable::P4VTwo} else {Drawable::P4Two},
-                            _ => Drawable::STwo,
-                        },
-                        3 => match self.player[i][j] {
-                            0 => if is_volatile {Drawable::P1VThree} else {Drawable::P1Three},
-                            1 => if is_volatile {Drawable::P2VThree} else {Drawable::P2Three},
-                            2 => if is_volatile {Drawable::P3VThree} else {Drawable::P3Three},
-                            3 => if is_volatile {Drawable::P4VThree} else {Drawable::P4Three},
-                            _ => Drawable::Bang,
-                        },
+                match self.world[i][j] {
+                    0 => Drawable::Empty,
+                    1 => match self.player[i][j] {
+                        0 => if is_volatile {Drawable::P1VOne} else {Drawable::P1One},
+                        1 => if is_volatile {Drawable::P2VOne} else {Drawable::P2One},
+                        2 => if is_volatile {Drawable::P3VOne} else {Drawable::P3One},
+                        3 => if is_volatile {Drawable::P4VOne} else {Drawable::P4One},
+                        _ => Drawable::SOne,
+                    },
+                    2 => match self.player[i][j] {
+                        0 => if is_volatile {Drawable::P1VTwo} else {Drawable::P1Two},
+                        1 => if is_volatile {Drawable::P2VTwo} else {Drawable::P2Two},
+                        2 => if is_volatile {Drawable::P3VTwo} else {Drawable::P3Two},
+                        3 => if is_volatile {Drawable::P4VTwo} else {Drawable::P4Two},
+                        _ => Drawable::STwo,
+                    },
+                    3 => match self.player[i][j] {
+                        0 => if is_volatile {Drawable::P1VThree} else {Drawable::P1Three},
+                        1 => if is_volatile {Drawable::P2VThree} else {Drawable::P2Three},
+                        2 => if is_volatile {Drawable::P3VThree} else {Drawable::P3Three},
+                        3 => if is_volatile {Drawable::P4VThree} else {Drawable::P4Three},
                         _ => Drawable::Bang,
-                    }
+                    },
+                    _ => Drawable::Bang,
                 }
             }
         }
     }
 
-    pub fn get_current_player(&self) -> usize {self.current_player}
+    pub fn get_current_player(&self) -> usize {
+        self.current_player
+    }
 
     pub fn is_player_dead(&self,  i : usize ) -> bool {
         self.scores[ i ] == 0 && !self.first_go[ i ]
@@ -246,11 +248,11 @@ impl Atoms {
     }
 
     pub fn game_over(&self) -> bool {
-        let mut max_score = 0;
-        let mut total_atoms = 0;
         if self.first_go[0] || self.first_go[1] || self.first_go[2] || self.first_go[3] {
             false
         } else {
+            let mut max_score = 0;
+            let mut total_atoms = 0;
             for score in 0..4 {
                 max_score = cmp::max( max_score, self.scores[score] );
                 total_atoms += self.scores[score];
