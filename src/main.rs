@@ -1,4 +1,3 @@
-// FIX SCOREBOARD text position
 mod atoms;
 use atoms::Atoms;
 use std::convert::TryInto;
@@ -399,8 +398,8 @@ fn main() {
             }
         }
 
-        let mut text = Text::new( "Score Board", &font, ( TILE_SIZE -5.0 ) as u32 );
-        text.set_position( Vector2f::new(TILE_SIZE * ( ( BOARD_SIZE_F - 0.5 )  * 3.0 / 2.0 ),
+        let mut text = Text::new( "Score Board", &font, ( TILE_SIZE - 5.0 ) as u32 );
+        text.set_position( Vector2f::new(TILE_SIZE * (BOARD_SIZE_F + 4.5),
                                          TILE_SIZE) );
         text.set_fill_color(Color::WHITE );
 
