@@ -347,6 +347,16 @@ fn main() {
             Some(event) => {
                 match event {
                     Event::Closed => window.close(),
+                    Event::MouseButtonPressed { button, x, y } => { match button {
+                        Button::Left => {
+                            if atoms.finished {
+                                atoms.click( (x / TILE_SIZE as i32) as usize,
+                                              (y / TILE_SIZE as i32) as usize );
+                                start_time = clock.elapsed_time();
+                            }
+                        },
+                        _ => {} }
+                    },
                     Event::KeyPressed { code, .. } => { match code {
                         Key::Escape => { window.close() },
                         Key::R => { atoms.clear( true ) },
@@ -359,21 +369,6 @@ fn main() {
                         },
                         _ => { } } },
                     _ => { }
-                }
-
-                if atoms.finished {
-                    match event {
-                        Event::MouseButtonPressed { button, x, y } => {
-                            match button {
-                                Button::Left => {
-                                    atoms.click( (x / TILE_SIZE as i32) as usize,
-                                                  (y / TILE_SIZE as i32) as usize );
-                                    start_time = clock.elapsed_time();
-                                },
-                                _ => {} }
-                        },
-                        _ => {}
-                    }
                 }
             },
             None => {}
