@@ -412,12 +412,10 @@ fn main() {
         for i in 0..4 {
             let s = if atoms.is_player_dead( i ) {
                 format!("Player {}:    DEAD", i+1)
+            } else if atoms.game_over() {
+                format!("Player {}: WINNER!", i+1)
             } else {
-                if atoms.game_over() {
-                    format!("Player {}: WINNER!", i+1)
-                } else {
-                    format!("Player {}:     {:>3}", i+1, atoms.get_player_score(i))
-                }
+                format!("Player {}:     {:>3}", i+1, atoms.get_player_score(i))
             };
             let mut text = Text::new( &s, &font, (TILE_SIZE-5.0) as u32 );
             text.set_position( Vector2f::new(BOARD_SIZE_F * TILE_SIZE + 5.0,
