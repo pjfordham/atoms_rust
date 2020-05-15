@@ -345,11 +345,18 @@ fn main() {
         // Handle events
         match window.poll_event() {
             Some(event) => {
-
                 match event {
                     Event::Closed => window.close(),
                     Event::KeyPressed { code, .. } => { match code {
                         Key::Escape => { window.close() },
+                        Key::R => { atoms.clear( true ) },
+                        Key::C => { atoms.clear( false ) },
+                        Key::Space => {
+                            if !atoms.editing {
+                                atoms.clear( true );
+                            }
+                            atoms.editing = !atoms.editing;
+                        },
                         _ => { } } },
                     _ => { }
                 }
@@ -358,20 +365,13 @@ fn main() {
                     match event {
                         Event::MouseButtonPressed { button, x, y } => {
                             match button {
-                                Button::Left => { atoms.click( (x / TILE_SIZE as i32) as usize,
-                                                                (y / TILE_SIZE as i32) as usize );
-                                                  start_time = clock.elapsed_time();
+                                Button::Left => {
+                                    atoms.click( (x / TILE_SIZE as i32) as usize,
+                                                  (y / TILE_SIZE as i32) as usize );
+                                    start_time = clock.elapsed_time();
                                 },
                                 _ => {} }
                         },
-                        Event::KeyPressed { code, .. } => { match code {
-                            Key::R => { atoms.clear( true ) },
-                            Key::C => { atoms.clear( false ) },
-                            Key::Space => {  if !atoms.editing {
-                                atoms.clear( true );
-                            }
-                                             atoms.editing = !atoms.editing;  },
-                            _ => { } } },
                         _ => {}
                     }
                 }
