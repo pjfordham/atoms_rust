@@ -1,37 +1,41 @@
-// Adapt code to have dynamic board size
-// move this random number stuff into a class
 use std::cmp;
 
-
-unsafe fn msws() -> u32 {
-    static mut X: u64 = 0;
-    static mut W: u64 = 0;
-    static mut S: u64 = 0xb5ad4eceda1ce2a9;
-    X = X.wrapping_mul(X);
-    W = W.wrapping_add(S);
-    X = W.wrapping_add(W);
-    X = (X>>32) | (X<<32);
-    X as u32
+pub struct PseudoRandom {
+    x: u64,
+    w: u64,
+    s: u64,
 }
 
-fn rnd_range(modu : u32) -> u32{
-    unsafe{
-        msws() % (modu + 1)
+impl PseudoRandom {
+    pub fn new() -> PseudoRandom {
+        PseudoRandom{ x : 0, w : 0, s : 0xb5ad4eceda1ce2a9 }
+    }
+
+    fn msws(&mut self) -> u32 {
+        self.x = self.x.wrapping_mul(self.x);
+        self.w = self.w.wrapping_add(self.s);
+        self.x = self.w.wrapping_add(self.w);
+        self.x = (self.x>>32) | (self.x<<32);
+        self.x as u32
+    }
+    pub fn range(&mut self, modu : u32) -> u32{
+        self.msws() % (modu + 1)
     }
 }
 
 pub struct Atoms {
     pub editing : bool,
     pub finished : bool,
+    rng : PseudoRandom,
     scores : [ u32; 4 ],
     current_player : usize,
     width : usize,
     height : usize,
     first_go: [bool;4],
-    player : [[usize;10];10],
-    map : [[u32;10];10],
-    world : [[u32;10];10],
-    other_world : [[u32;10];10]
+    player : Vec<Vec<usize>>,
+    map : Vec<Vec<u32>>,
+    world : Vec<Vec<u32>>,
+    other_world : Vec<Vec<u32>>,
 }
 
 #[derive(PartialEq)]
@@ -63,17 +67,18 @@ pub enum Drawable {
 impl Atoms {
 
     pub fn new(_width : usize, _height : usize) -> Atoms {
-        let mut atoms = Atoms{ width: 10,
-                               height : 10,
+        let mut atoms = Atoms{ width: _width,
+                               height : _height,
                                current_player : 0,
                                editing : true,
                                finished : true,
-                               scores : [0,0,0,0],
+                               rng : PseudoRandom::new(),
+                               scores : [0 ; 4 ],
                                first_go : [true; 4],
-                               player : [[0;10];10],
-                               map : [[0;10];10],
-                               world : [[0;10];10],
-                               other_world : [[0;10];10] };
+                               player :vec![ vec! [ 0 ; _width ] ; _height],
+                               map : vec![ vec! [ 0 ; _width ] ; _height],
+                               world : vec![ vec! [ 0 ; _width ] ; _height],
+                               other_world : vec![ vec! [ 0 ; _width ] ; _height] };
         atoms.clear( true );
         atoms.editing = false;
         atoms.clear( true );
@@ -81,7 +86,7 @@ impl Atoms {
     }
 
     pub fn click(&mut self, i : usize, j : usize ) {
-        if i < 10 && j < 10 {
+        if i < self.width && j < self.height {
             if self.editing {
                 self.map[i][j] = if self.map[i][j] == 0 { 3 } else { 0 };
                 self.calculate_map();
@@ -116,7 +121,7 @@ impl Atoms {
                     if self.map[i][j] < 2 {
                         self.world[i][j] = 0;
                     } else {
-                        self.world[i][j] = if randomize {rnd_range(self.map[i][j]-1)} else {0}
+                        self.world[i][j] = if randomize {self.rng.range(self.map[i][j]-1)} else {0}
                     }
                     self.other_world[i][j] = 0;
                     self.player[i][j] = 20;
@@ -262,22 +267,22 @@ impl Atoms {
     }
 
     pub fn dump_state(&self) {
-        for i in 0..10 {
-            for j in 0..10 {
+        for i in 0..self.width {
+            for j in 0..self.height {
                 print!( "{:02}:", self.player[i][j]);
             }
             println!();
         }
         println!();
-        for i in 0..10 {
-            for j in 0..10 {
+        for i in 0..self.width {
+            for j in 0..self.height {
                 print!( "{:02}:", self.get_content(i,j) as u8 );
             }
             println!();
         }
         println!();
-        for i in 0..10 {
-            for j in 0..10 {
+        for i in 0..self.width {
+            for j in 0..self.height {
                 print!( "{:02}:", self.world[i][j]);
             }
             println!();

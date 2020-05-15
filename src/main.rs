@@ -1,3 +1,4 @@
+// FIX SCOREBOARD text position
 mod atoms;
 use atoms::Atoms;
 use std::convert::TryInto;
@@ -5,7 +6,7 @@ use std::convert::TryInto;
 extern crate sfml;
 
 static TILE_SIZE: f32 = 50.0;
-static BOARD_SIZE: usize = 10;
+static BOARD_SIZE: usize = 15;
 static BOARD_SIZE_F: f32 = BOARD_SIZE as f32;
 
 use sfml::system::{Clock,Vector2f};
