@@ -416,7 +416,7 @@ fn main() {
                 if atoms.game_over() {
                     format!("Player {}: WINNER!", i+1)
                 } else {
-                    format!("Player {}:     {:03}", i+1, atoms.get_player_score(i))
+                    format!("Player {}:     {:>3}", i+1, atoms.get_player_score(i))
                 }
             };
             let mut text = Text::new( &s, &font, (TILE_SIZE-5.0) as u32 );
