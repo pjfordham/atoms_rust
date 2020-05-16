@@ -10,7 +10,7 @@ static BOARD_SIZE_F: f32 = BOARD_SIZE as f32;
 
 use sfml::system::{Clock,Vector2f};
 use sfml::window::{ContextSettings, VideoMode, Key, Style, Event, mouse::Button};
-use sfml::graphics::{BlendMode,Transform,IntRect,Shape,RectangleShape,Drawable, Sprite,Font,Text,Texture,RenderStates, RenderWindow, RenderTarget, Color, Transformable};
+use sfml::graphics::{BlendMode,Transform,RenderTexture,IntRect,Shape,RectangleShape,Drawable, Sprite,Font,Text,Texture,RenderStates, RenderWindow, RenderTarget, Color, Transformable};
 
 struct Number<'a> { // Nummber struct is valid for lifetime 'a where a is the intersection of
     // the lifetime of the referenced Font and the referenced Sprite background.
@@ -30,6 +30,7 @@ impl<'a> Number<'a> {
         let number = Number{ font : _font, color : _color, background : _background, number : _number };
          number
     }
+
 }
 
 impl Drawable for Number<'_> {
@@ -57,33 +58,6 @@ impl Drawable for Number<'_> {
         text.set_fill_color( self.color );
 
         target.draw_with_renderstates(&text, states);
-    }
-}
-
-struct SpriteElement<'a> // Again we have a reference to a sprite that must be valid, and that sprite has a reference to
-// a texture that must be valid.
-{
-    background : &'a Sprite<'a>,
-}
-
-impl<'a> SpriteElement<'a> {
-    fn new(_background : &'a Sprite<'a>) -> SpriteElement<'a> {
-        let number = SpriteElement{ background : _background };
-         number
-    }
-}
-
-impl Drawable for SpriteElement<'_> {
-
-    fn draw<'se, 'tex, 'sh, 'shte>(
-        &'se self,
-        target: &mut dyn RenderTarget,
-        states: RenderStates<'tex, 'sh, 'shte>
-    )
-    where
-        'se: 'sh, {
-
-        target.draw_with_renderstates(self.background, states);
     }
 }
 
@@ -293,10 +267,10 @@ fn main() {
     let clock = Clock::start();
 
     let drawables: [& dyn Drawable; 31] = [
-        &SpriteElement::new( &stone_sprite ),
+        &stone_sprite,
         &RectangleShapeElement::new( Color::RED ),
         &RectangleShapeElement::new( Color::YELLOW ),
-        &SpriteElement::new( &wood_sprite ),
+        &wood_sprite,
         &Explosion::new( &wood_sprite, &explosion_texture, &clock ),
         &Number::new( &font, p_color[0], &wood_sprite, 1 ),
         &Number::new( &font, p_color[0], &wood_sprite, 2 ),
@@ -324,7 +298,61 @@ fn main() {
         &VolatileNumber::new( &font, p_color[3], &wood_sprite, 3, &clock ),
         &Number::new( &font, s_color, &wood_sprite, 1 ),
         &Number::new( &font, s_color, &wood_sprite, 2 ),
-   ];
+    ];
+
+    let mut render_texture = match RenderTexture::new( 50 * 31, 50, false ) {
+        Some(texture) => texture,
+        None => panic!("Texture error.")
+    };
+
+    for i in 0..drawables.len() {
+        let mut states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
+        states.transform.translate( i as f32 * TILE_SIZE, 0.0 );
+        render_texture.draw_with_renderstates( drawables[i], states );
+    }
+    render_texture.display();
+
+
+    let texture = render_texture.texture();
+
+    let mut sprites: [Sprite; 31 ] = [
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+        Sprite::with_texture( texture ),
+    ];
+
+    for i in 0..drawables.len() {
+        sprites[i].set_texture_rect( &IntRect::new(i as i32 * TILE_SIZE as i32, 0,
+                                                   TILE_SIZE as i32, TILE_SIZE as i32) );
+    }
 
     let mut start_time = clock.elapsed_time();
 
