@@ -61,18 +61,18 @@ impl Drawable for Number<'_> {
     }
 }
 
-struct RectangleShapeElement {
+struct RectangleShape {
     color : Color,
 }
 
-impl<'a> RectangleShapeElement {
-    fn new( _color : Color) -> RectangleShapeElement {
-        let number = RectangleShapeElement{ color : _color };
+impl<'a> RectangleShape {
+    fn new( _color : Color) -> RectangleShape {
+        let number = RectangleShape{ color : _color };
          number
     }
 }
 
-impl Drawable for RectangleShapeElement {
+impl Drawable for RectangleShape {
 
     fn draw<'se, 'tex, 'sh, 'shte>(
         &'se self,
@@ -268,8 +268,8 @@ fn main() {
 
     let drawables: [& dyn Drawable; 31] = [
         &stone_sprite,
-        &RectangleShapeElement::new( Color::RED ),
-        &RectangleShapeElement::new( Color::YELLOW ),
+        &RectangleShape::new( Color::RED ),
+        &RectangleShape::new( Color::YELLOW ),
         &wood_sprite,
         &Explosion::new( &wood_sprite, &explosion_texture, &clock ),
         &Number::new( &font, p_color[0], &wood_sprite, 1 ),
