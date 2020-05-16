@@ -44,9 +44,7 @@ impl Drawable for Number<'_> {
     where
         'se: 'sh, {
 
-        let my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
-
-        target.draw_with_renderstates(self.background, my_states);
+        target.draw_with_renderstates(self.background, states);
 
         let mut text = Text::new( &self.number.to_string(), &self.font, TILE_SIZE as u32 );
 
@@ -138,8 +136,7 @@ impl<'a> VolatileNumber<'a> {
     )
     where
         'se: 'sh, {
-        let my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
-        target.draw_with_renderstates(self.background, my_states);
+        target.draw_with_renderstates(self.background, states);
 
         let mut text = Text::new( &self.number.to_string(), &self.font, TILE_SIZE as u32 );
 
@@ -156,7 +153,7 @@ impl<'a> VolatileNumber<'a> {
             let dimness = Color::rgba(255,255,255, (frame as u8) *9 );
             text.set_fill_color( self.color * dimness );
         }
-        target.draw_with_renderstates(&text, my_states);
+        target.draw_with_renderstates(&text, states);
     }
 
 }
@@ -220,8 +217,7 @@ impl<'a> Explosion<'a> {
     where
         'se: 'sh, {
 
-        let my_states = RenderStates::new( states.blend_mode, states.transform, states.texture, states.shader );
-        target.draw_with_renderstates( self.background, my_states );
+        target.draw_with_renderstates( self.background, states );
 
         target.draw_with_renderstates( &self.explosion_sprite[frame], states );
     }
