@@ -214,15 +214,40 @@ impl Drawable for Explosion<'_> {
     }
 }
 
-
-fn intrect_for_sprite( x : usize ) -> IntRect {
-    IntRect::new(x as i32 * TILE_SIZE as i32, 0, TILE_SIZE as i32, TILE_SIZE as i32)
+struct DrawableAccelerator {
+    render_texture : RenderTexture,
+    tile_width : u32,
+    tile_height : u32,
 }
 
-fn sprite_with_texture_rect<'a>( texture : &'a Texture, rect : &IntRect ) -> Sprite<'a> {
-    let mut sprite = Sprite::with_texture( texture );
-    sprite.set_texture_rect( rect );
-    sprite
+impl DrawableAccelerator {
+    fn new( _tile_width : u32, _tile_height : u32, tile_count : usize ) -> DrawableAccelerator {
+        DrawableAccelerator{
+            render_texture : match RenderTexture::new( _tile_width * tile_count as u32, _tile_height, false ) {
+                Some(texture) => texture,
+                None => panic!("Texture error.")
+            },
+            tile_width : _tile_width,
+            tile_height : _tile_height,
+        }
+    }
+
+    fn draw_tile(&mut self, tile : usize, drawable : &dyn Drawable) {
+        let mut states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
+        states.transform.translate( tile as f32 * self.tile_width as f32, 0.0 );
+        self.render_texture.draw_with_renderstates( drawable, states );
+    }
+
+    fn drawing_complete(&self) {
+        self.render_texture.display()
+    }
+
+    fn sprite_for_tile(&self, tile : usize ) -> Sprite {
+        let mut sprite = Sprite::with_texture( self.render_texture.texture() );
+        sprite.set_texture_rect( &IntRect::new(self.tile_width as i32 * tile as i32, 0,
+                                               self.tile_width as i32 , self.tile_height as i32) );
+        sprite
+    }
 }
 
 fn main() {
@@ -309,21 +334,13 @@ fn main() {
         &Number::new( &font, s_color, &wood_sprite, 2 ),
     ];
 
-    let mut render_texture = match RenderTexture::new( TILE_SIZE as u32 * atoms::Drawable::Wall.size() as u32, TILE_SIZE as u32 , false ) {
-        Some(texture) => texture,
-        None => panic!("Texture error.")
-    };
-
+    let mut drawable_accelerator = DrawableAccelerator::new( TILE_SIZE as u32, TILE_SIZE as u32, atoms::Drawable::Wall.size());
     for i in 0..atoms::Drawable::Wall.size() {
-        let mut states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
-        states.transform.translate( i as f32 * TILE_SIZE, 0.0 );
-        render_texture.draw_with_renderstates( drawables[i], states );
+        drawable_accelerator.draw_tile( i, drawables[i] );
     }
-    render_texture.display();
+    drawable_accelerator.drawing_complete();
 
-    let texture = render_texture.texture();
-
-    let _sprites: [Sprite; atoms::Drawable::Wall.size()] = array_init(|i| sprite_with_texture_rect( texture, &intrect_for_sprite( i ) ));
+    let _sprites: [Sprite; atoms::Drawable::Wall.size()] = array_init(|i| drawable_accelerator.sprite_for_tile(i) );
 
     let mut start_time = clock.elapsed_time();
 
