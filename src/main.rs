@@ -340,7 +340,7 @@ fn main() {
     }
     drawable_accelerator.drawing_complete();
 
-    let _sprites: [Sprite; atoms::Drawable::Wall.size()] = array_init(|i| drawable_accelerator.sprite_for_tile(i) );
+    let sprites: [Sprite; atoms::Drawable::Wall.size()] = array_init(|i| drawable_accelerator.sprite_for_tile(i) );
 
     let mut start_time = clock.elapsed_time();
 
@@ -401,7 +401,7 @@ fn main() {
             for y in 0..BOARD_SIZE {
                 let mut my_states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
                 my_states.transform.translate( x as f32 * TILE_SIZE, y as f32 * TILE_SIZE );
-                window.draw_with_renderstates( drawables[ atoms::Drawable::Wall as usize ], my_states );
+                window.draw_with_renderstates( &sprites[ atoms::Drawable::Wall as usize ], my_states );
             }
         }
 
