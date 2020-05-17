@@ -1,6 +1,7 @@
 mod atoms;
 use atoms::Atoms;
 use std::convert::TryInto;
+use array_init::array_init;
 
 extern crate sfml;
 
@@ -214,7 +215,15 @@ impl Drawable for Explosion<'_> {
 }
 
 
+fn intrect_for_sprite( x : usize ) -> IntRect {
+    IntRect::new(x as i32 * TILE_SIZE as i32, 0, TILE_SIZE as i32, TILE_SIZE as i32)
+}
 
+fn sprite_with_texture_rect<'a>( texture : &'a Texture, rect : &IntRect ) -> Sprite<'a> {
+    let mut sprite = Sprite::with_texture( texture );
+    sprite.set_texture_rect( rect );
+    sprite
+}
 
 fn main() {
     let mut atoms = Atoms::new( BOARD_SIZE, BOARD_SIZE);
@@ -266,7 +275,7 @@ fn main() {
 
     let clock = Clock::start();
 
-    let drawables: [& dyn Drawable; 31] = [
+    let drawables: [& dyn Drawable; atoms::Drawable::Wall.size() ] = [
         &stone_sprite,
         &ColorBlock::new( Color::RED ),
         &ColorBlock::new( Color::YELLOW ),
@@ -300,59 +309,21 @@ fn main() {
         &Number::new( &font, s_color, &wood_sprite, 2 ),
     ];
 
-    let mut render_texture = match RenderTexture::new( 50 * 31, 50, false ) {
+    let mut render_texture = match RenderTexture::new( TILE_SIZE as u32 * atoms::Drawable::Wall.size() as u32, TILE_SIZE as u32 , false ) {
         Some(texture) => texture,
         None => panic!("Texture error.")
     };
 
-    for i in 0..drawables.len() {
+    for i in 0..atoms::Drawable::Wall.size() {
         let mut states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
         states.transform.translate( i as f32 * TILE_SIZE, 0.0 );
         render_texture.draw_with_renderstates( drawables[i], states );
     }
     render_texture.display();
 
-
     let texture = render_texture.texture();
 
-    let mut sprites: [Sprite; 31 ] = [
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-        Sprite::with_texture( texture ),
-    ];
-
-    for i in 0..drawables.len() {
-        sprites[i].set_texture_rect( &IntRect::new(i as i32 * TILE_SIZE as i32, 0,
-                                                   TILE_SIZE as i32, TILE_SIZE as i32) );
-    }
+    let _sprites: [Sprite; atoms::Drawable::Wall.size()] = array_init(|i| sprite_with_texture_rect( texture, &intrect_for_sprite( i ) ));
 
     let mut start_time = clock.elapsed_time();
 

@@ -64,6 +64,18 @@ pub enum Drawable {
     SOne, STwo,
 }
 
+impl Into<usize> for Drawable {
+    fn into(self) -> usize {
+        self as usize
+    }
+}
+
+impl Drawable {
+    pub const fn size(self) -> usize {
+        Drawable::STwo as usize + 1
+    }
+}
+
 impl Atoms {
 
     pub fn new(_width : usize, _height : usize) -> Atoms {
