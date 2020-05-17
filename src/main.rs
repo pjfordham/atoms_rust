@@ -390,18 +390,18 @@ fn main() {
 
         for x in 0..BOARD_SIZE {
             for y in 0..BOARD_SIZE {
-                let mut my_states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
-                my_states.transform.translate( x as f32 * TILE_SIZE, y as f32 * TILE_SIZE );
+                let mut states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
+                states.transform.translate( x as f32 * TILE_SIZE, y as f32 * TILE_SIZE );
                 let content = atoms.get_content( x, y );
-                window.draw_with_renderstates( drawables[ content as usize ], my_states );
+                window.draw_with_renderstates( drawables[ content as usize ], states );
             }
         }
 
         for x in BOARD_SIZE..BOARD_SIZE+10 {
             for y in 0..BOARD_SIZE {
-                let mut my_states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
-                my_states.transform.translate( x as f32 * TILE_SIZE, y as f32 * TILE_SIZE );
-                window.draw_with_renderstates( &sprites[ atoms::Drawable::Wall as usize ], my_states );
+                let mut states = RenderStates::new( BlendMode::ALPHA, Transform::IDENTITY, None, None );
+                states.transform.translate( x as f32 * TILE_SIZE, y as f32 * TILE_SIZE );
+                window.draw_with_renderstates( &sprites[ atoms::Drawable::Wall as usize ], states );
             }
         }
 
